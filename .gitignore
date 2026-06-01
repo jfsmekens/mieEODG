@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Fortran build artifacts (compiled locally — not committed)
+mieEODG/fortran/*.so
+mieEODG/fortran/*.pyd
+mieEODG/fortran/*.mod
+mieEODG/fortran/*.o
+_mie_kernel_f90*.so
+_mie_kernel_f90*.pyd
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Test / debug outputs
+tests/*.png
+tests/*.nc
+tests/*.npz
+debug/
+
+# LUT cache (user-level, never committed)
+.mieEODG/
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+*.swp
