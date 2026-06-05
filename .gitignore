@@ -15,6 +15,7 @@ mieEODG/fortran/*.so
 mieEODG/fortran/*.pyd
 mieEODG/fortran/*.mod
 mieEODG/fortran/*.o
+mieEODG/fortran/.f2py_build/  # NumPy f2py build directory
 _mie_kernel_f90*.so
 _mie_kernel_f90*.pyd
 
@@ -28,13 +29,18 @@ venv/
 *.ipynb
 
 # Test / debug outputs
-tests/*.png
-tests/*.nc
+tests/demo_output/      # consolidated demo figure outputs
+tests/*.png             # legacy (pre-demo_config)
+tests/*.nc              # legacy (pre-demo_config)
 tests/*.npz
 debug/
 
-# LUT cache (user-level, never committed)
+# LUT cache (user-level and demo-generated, never committed)
 .mieEODG/
+mieEODG/cache/
+
+# Project memory (session context for Claude — not for version control)
+CLAUDE.md
 
 # macOS
 .DS_Store

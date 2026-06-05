@@ -1,0 +1,177 @@
+{
+  "database_info": {
+    "total_files": 450,
+    "last_updated": "2026-06-03",
+    "audit_script": "aria_source_completeness.json",
+    "constraint": "Each LUT sweep must use a SINGLE source to avoid measurement technique mixing"
+  },
+  "canonical_sources": {
+    "Sulphuric acid": {
+      "preferred_source": "Myhre 2003",
+      "file_count": 32,
+      "sweep_axes": [
+        "composition",
+        "temperature_K"
+      ],
+      "composition_points": [
+        38,
+        48,
+        58,
+        65,
+        72
+      ],
+      "composition_units": "wt%",
+      "temperature_points": [
+        203,
+        208,
+        213,
+        218,
+        223,
+        228,
+        233,
+        238,
+        243,
+        248,
+        253,
+        258,
+        263,
+        298
+      ],
+      "temperature_units": "K",
+      "spectral_range_cm": [
+        800,
+        6000
+      ],
+      "lut_type": "r0 \u00d7 composition \u00d7 temperature",
+      "notes": "Ideal 2-D sweep: dense T\u00d7C grid from single study"
+    },
+    "HNO3": {
+      "preferred_source": "Biermann 2000",
+      "file_count": 29,
+      "sweep_axes": [
+        "composition",
+        "temperature_K"
+      ],
+      "composition_points": [
+        0,
+        10,
+        20,
+        30,
+        40
+      ],
+      "composition_units": "wt%",
+      "temperature_points": [
+        213,
+        233,
+        253,
+        273,
+        293
+      ],
+      "temperature_units": "K",
+      "spectral_range_cm": [
+        260,
+        4988
+      ],
+      "lut_type": "r0 \u00d7 composition \u00d7 temperature",
+      "notes": "Good 2-D sweep: consistent T\u00d7C coverage from single study"
+    },
+    "Water ice": {
+      "preferred_source": "Curtis 2005",
+      "file_count": 8,
+      "sweep_axes": [
+        "temperature_K"
+      ],
+      "temperature_points": [
+        106,
+        120,
+        130,
+        140,
+        150,
+        160,
+        170,
+        176
+      ],
+      "temperature_units": "K",
+      "spectral_range_cm": [
+        837,
+        6962
+      ],
+      "lut_type": "r0 \u00d7 temperature",
+      "notes": "1-D temperature sweep: cleanest coverage from Curtis study"
+    },
+    "Supercooled water": {
+      "preferred_source": "Rowe 2020",
+      "alternatives": [
+        "Wagner 2005",
+        "Zasetsky 2005"
+      ],
+      "file_count": 4,
+      "sweep_axes": [
+        "temperature_K"
+      ],
+      "temperature_points": [
+        240,
+        245,
+        255,
+        273
+      ],
+      "temperature_units": "K",
+      "spectral_range_cm": [
+        4,
+        15000
+      ],
+      "lut_type": "r0 \u00d7 temperature",
+      "notes": "1-D temperature sweep: Rowe 2020 chosen for highest T coverage (240-273 K)"
+    },
+    "Water (liquid)": {
+      "preferred_source": "Rowe 2020",
+      "alternatives": [
+        "Zasetsky 2005"
+      ],
+      "file_count": 4,
+      "sweep_axes": [
+        "temperature_K"
+      ],
+      "temperature_points": [
+        265,
+        280,
+        290,
+        300
+      ],
+      "temperature_units": "K",
+      "spectral_range_cm": [
+        1,
+        14880
+      ],
+      "lut_type": "r0 \u00d7 temperature",
+      "notes": "1-D temperature sweep: pure water at normal temperatures"
+    }
+  },
+  "sweep_constraints": {
+    "notes": "Enforce these constraints at LUT construction time",
+    "rules": [
+      "Each LUT dimension that varies the RI must come from audit-verified coverage",
+      "Cannot mix sources within a single sweep (raises ValueError)",
+      "Interpolation can ONLY occur within the audit-specified grid points",
+      "Extrapolation beyond audit range returns warning + extrapolated values"
+    ]
+  },
+  "implementation_notes": {
+    "phase_1_priority": [
+      "Sulphuric acid (Myhre 2003)",
+      "HNO3 (Biermann 2000)"
+    ],
+    "phase_2_priority": [
+      "Water ice (Curtis 2005)",
+      "Supercooled water (Rowe 2020)"
+    ],
+    "phase_3_optional": [
+      "Water (Rowe 2020)",
+      "alternative sources as separate LUTs"
+    ],
+    "excluded": [
+      "Dust/Sand (composition variation ~0)",
+      "Volcanic ash (single-T limitation)"
+    ]
+  }
+}

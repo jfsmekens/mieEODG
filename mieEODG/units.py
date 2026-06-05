@@ -138,10 +138,10 @@ def wn_grid_from_um(
     """
     Build a wavenumber grid from a wavelength range specified in µm.
 
-    The output grid runs from ``wn_from_um(wl_max_um)`` (low wavenumber)
-    to ``wn_from_um(wl_min_um)`` (high wavenumber), sampled on a uniform
-    **wavelength** grid with spacing *step_um*, then converted and sorted
-    in ascending wavenumber order.
+    The output grid is sampled on a uniform **wavelength** grid with spacing
+    *step_um*, converted to wavenumber, and sorted in **decreasing** wavenumber
+    order (high to low). This is consistent with the package plotting convention
+    where descending wavenumber corresponds to increasing wavelength.
 
     Parameters
     ----------
@@ -155,17 +155,17 @@ def wn_grid_from_um(
     Returns
     -------
     np.ndarray
-        Wavenumber grid [cm⁻¹], sorted ascending.
+        Wavenumber grid [cm⁻¹], sorted in decreasing order (high to low).
 
     Examples
     --------
     >>> wn = wn_grid_from_um(8.0, 14.0, 0.01)
-    >>> wn.min(), wn.max()
-    (714.29..., 1250.0)
+    >>> wn[:3], wn[-3:]  # First and last 3 values
+    (array([1250. , 1246.88, 1243.78]), array([716.34, 715.33, 714.29]))
     """
     wl = np.arange(wl_min_um, wl_max_um + step_um / 2.0, step_um)
     wn = wn_from_um(wl)
-    return np.sort(wn)
+    return np.sort(wn)[::-1]  # Reverse to get decreasing wavenumber
 
 
 def wn_grid_from_nm(
@@ -175,6 +175,11 @@ def wn_grid_from_nm(
 ) -> np.ndarray:
     """
     Build a wavenumber grid from a wavelength range specified in nm.
+
+    The output grid is sampled on a uniform **wavelength** grid with spacing
+    *step_nm*, converted to wavenumber, and sorted in **decreasing** wavenumber
+    order (high to low). This is consistent with the package plotting convention
+    where descending wavenumber corresponds to increasing wavelength.
 
     Parameters
     ----------
@@ -188,8 +193,8 @@ def wn_grid_from_nm(
     Returns
     -------
     np.ndarray
-        Wavenumber grid [cm⁻¹], sorted ascending.
+        Wavenumber grid [cm⁻¹], sorted in decreasing order (high to low).
     """
     wl = np.arange(wl_min_nm, wl_max_nm + step_nm / 2.0, step_nm)
     wn = wn_from_nm(wl)
-    return np.sort(wn)
+    return np.sort(wn)[::-1]  # Reverse to get decreasing wavenumber

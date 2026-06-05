@@ -715,3 +715,320 @@ class ARIADatabase:
     def __repr__(self) -> str:
         n = len(self.list())
         return f"ARIADatabase('{self.root}', {n} files)"
+
+
+# ---------------------------------------------------------------------------
+# Prata et al. (2019) Volcanic Ash RI Parameterization
+# ---------------------------------------------------------------------------
+
+def ash_refrindex(
+    wn: np.ndarray,
+    sio2: float | None = None,
+    comp: 'BulkComposition | None' = None,
+    *,
+    f: float | None = None,
+    rock_type: str | None = None,
+    force: str = 'auto',
+) -> RefrIndex:
+    """
+    Generate complex refractive index for volcanic ash from bulk composition.
+
+    Uses the linear spectral regression model from Prata et al. (2019, JGR
+    Atmospheres, doi:10.1029/2018JD028679) to compute n and k as linear
+    functions of a composition predictor (either NBO/T or SiO₂ wt%).
+
+    Parameters
+    ----------
+    wn : np.ndarray, shape (N,)
+        Wavenumber grid [cm⁻¹]. Must be in ascending order, with all values
+        in the range [528, 25000] cm⁻¹ (0.4–18.9 µm).
+    sio2 : float or None
+        SiO₂ wt%, [0, 100]. Simplest input; used directly if no `comp` supplied.
+    comp : BulkComposition or None
+        Full oxide composition. If supplied and Fe²⁺/Fe³⁺ is resolvable,
+        NBO/T is computed and used (preferred). Otherwise falls back to `sio2`.
+    f : float or None
+        Explicit Fe²⁺/Fe³⁺ ratio for NBO/T calculation.
+    rock_type : str or None
+        Rock type for Middlemost (1989) f lookup ('basalt'|'andesite'|'dacite'|
+        'rhyolite'). Used only if `comp.feo` is None and `f` is None.
+    force : {'auto', 'nbot', 'sio2'}
+        Resolution logic:
+        - 'auto' (default): use NBO/T if resolvable, else SiO₂
+        - 'nbot': require NBO/T; raise if not resolvable
+        - 'sio2': use SiO₂ regardless of composition data
+
+    Returns
+    -------
+    RefrIndex
+        Complex refractive index with:
+        - `category = 'volcanic_ash'`
+        - `substance` set to predictor + value (e.g., 'Prata2019 NBO/T=0.43')
+        - `composition = {'SiO2': wt_fraction}` for density lookup
+        - All other fields set to defaults
+
+    Raises
+    ------
+    ValueError
+        If wavenumber is out of valid range or if `force='nbot'` but Fe split
+        cannot be resolved.
+    ImportError
+        If BulkComposition is not available (composition module not loaded).
+
+    Notes
+    -----
+    Training data: 13 ash samples (Reed et al. 2018), SiO₂ 48–75 wt%,
+    NBO/T 0.04–0.79. Linear extrapolation outside this range; results become
+    unreliable at extremes.
+
+    Known limitations:
+    - Breaks down where individual sample spectra intersect (e.g., λ ≈ 10.5 µm)
+    - Non-linear behaviour at λ > 11 µm where composition sensitivity increases
+    - Negative k values may occur (clipped to 0)
+
+    Examples
+    --------
+    From SiO₂ alone:
+
+    >>> wn = np.arange(650, 1350, 10)
+    >>> ri = ash_refrindex(wn, sio2=62.0)
+
+    From full oxide composition:
+
+    >>> from mieEODG.composition import BulkComposition
+    >>> comp = BulkComposition(sio2=62.0, al2o3=16.0, fe2o3=6.0, mgo=3.5, cao=6.0)
+    >>> ri = ash_refrindex(wn, comp=comp, rock_type='andesite')
+    """
+    from .composition import BulkComposition  # Import here to avoid circular deps
+
+    # --- Validate wavenumber range ---
+    wn = np.asarray(wn, dtype=np.float64)
+    if np.any(wn < 528) or np.any(wn > 25000):
+        logger.warning(
+            f"Wavenumber out of training range [528, 25000] cm⁻¹; "
+            f"results may be unreliable outside [0.4, 18.9] µm"
+        )
+
+    # --- Load Prata2019 coefficient table ---
+    prata_data = _load_prata2019_coeff()
+
+    # --- Resolve composition predictor (NBO/T vs SiO₂) ---
+    nbot_val = None
+    sio2_val = None
+
+    if force == 'nbot':
+        # Force NBO/T; raise if not resolvable
+        if comp is None:
+            raise ValueError(
+                "force='nbot' but comp is None; cannot compute NBO/T"
+            )
+        try:
+            from .composition import nbot_from_composition
+            nbot_val = nbot_from_composition(
+                comp, f=f, rock_type=rock_type
+            )
+            sio2_val = comp.sio2
+            logger.info(f"Using NBO/T parameterization: NBO/T = {nbot_val:.4f}")
+        except ValueError as e:
+            raise ValueError(f"Cannot resolve NBO/T: {e}") from e
+
+    elif force == 'sio2':
+        # Force SiO₂; ignore NBO/T
+        if sio2 is not None:
+            sio2_val = float(sio2)
+        elif comp is not None:
+            sio2_val = comp.sio2
+        else:
+            raise ValueError("force='sio2' but sio2 and comp are both None")
+        logger.info(f"Using SiO₂ parameterization: SiO₂ = {sio2_val:.1f} wt%")
+
+    else:  # force == 'auto'
+        # Try NBO/T first, fall back to SiO₂
+        if comp is not None:
+            try:
+                from .composition import nbot_from_composition
+                nbot_val = nbot_from_composition(
+                    comp, f=f, rock_type=rock_type
+                )
+                sio2_val = comp.sio2
+                logger.info(f"Using NBO/T parameterization: NBO/T = {nbot_val:.4f}")
+            except ValueError:
+                # NBO/T not resolvable; fall back to SiO₂
+                sio2_val = comp.sio2 if comp.sio2 is not None else sio2
+                if sio2_val is not None:
+                    logger.warning(
+                        f"Could not resolve NBO/T; falling back to SiO₂ = "
+                        f"{sio2_val:.1f} wt%"
+                    )
+                else:
+                    raise ValueError(
+                        "Cannot resolve composition: comp.feo unavailable and "
+                        "sio2 not supplied"
+                    )
+        else:
+            # Use SiO₂ directly
+            sio2_val = float(sio2) if sio2 is not None else None
+            if sio2_val is None:
+                raise ValueError("No composition data supplied")
+            logger.info(f"Using SiO₂ parameterization: SiO₂ = {sio2_val:.1f} wt%")
+
+    # --- Interpolate coefficients onto input wavenumber grid ---
+    if nbot_val is not None:
+        # NBO/T parameterization (i1 columns)
+        a_i = np.interp(wn, prata_data['wn'], prata_data['a_i1'])
+        b_i = np.interp(wn, prata_data['wn'], prata_data['b_i1'])
+        c_i = np.interp(wn, prata_data['wn'], prata_data['c_i1'])
+        d_i = np.interp(wn, prata_data['wn'], prata_data['d_i1'])
+        X = nbot_val
+        predictor_name = f"NBO/T={X:.2f}"
+    else:
+        # SiO₂ parameterization (i2 columns)
+        a_i = np.interp(wn, prata_data['wn'], prata_data['a_i2'])
+        b_i = np.interp(wn, prata_data['wn'], prata_data['b_i2'])
+        c_i = np.interp(wn, prata_data['wn'], prata_data['c_i2'])
+        d_i = np.interp(wn, prata_data['wn'], prata_data['d_i2'])
+        X = sio2_val / 100.0  # Normalize SiO₂ to [0, 1]
+        predictor_name = f"SiO2={sio2_val:.1f} wt%"
+
+    # --- Compute n and k ---
+    n = a_i + b_i * X
+    k = c_i + d_i * X
+    k = np.maximum(k, 0)  # Clip k >= 0 to prevent unphysical negative absorption
+
+    # --- Create RefrIndex object ---
+    wl = 1e4 / wn
+    Cm = n - 1j * k
+
+    header = {
+        'SUBSTANCE': f'Prata2019 {predictor_name}',
+        'CITATION': 'Prata et al. (2019, JGR Atmospheres, doi:10.1029/2018JD028679)',
+        'MODEL': f"Linear regression: n = a + b*{('NBO/T' if nbot_val is not None else 'SiO2')}, k = c + d*X",
+    }
+
+    ri = RefrIndex(
+        wavenumber=wn,
+        wavelength=wl,
+        n=n,
+        k=k,
+        Cm=Cm,
+        header=header,
+        filepath='(synthetic: Prata2019)',
+        category='volcanic_ash',
+        substance_key='prata2019',
+        T_K=None,
+        composition={'SiO2': sio2_val / 100.0} if sio2_val is not None else {},
+    )
+
+    return ri
+
+
+# ---------------------------------------------------------------------------
+# Coefficient loader (cached)
+# ---------------------------------------------------------------------------
+
+_PRATA2019_CACHE = None
+
+
+def _load_prata2019_coeff() -> dict[str, np.ndarray]:
+    """
+    Load Prata2019 coefficient table, cached for subsequent calls.
+
+    Returns
+    -------
+    dict
+        Keys: 'wn', 'a_i1', 'b_i1', 'c_i1', 'd_i1' (NBO/T)
+                 'a_i2', 'b_i2', 'c_i2', 'd_i2' (SiO₂)
+        Each value is 1-D np.ndarray of length 1933.
+    """
+    global _PRATA2019_CACHE
+
+    if _PRATA2019_CACHE is not None:
+        return _PRATA2019_CACHE
+
+    data_path = Path(__file__).parent / 'data' / 'Prata2019_coeff.csv'
+    if not data_path.exists():
+        raise FileNotFoundError(
+            f"Prata2019 coefficient file not found: {data_path}"
+        )
+
+    # Load CSV
+    raw = np.genfromtxt(
+        data_path,
+        delimiter=',',
+        names=True,
+        dtype=None,
+        encoding='utf-8',
+    )
+
+    # Extract columns (skip R-squared values)
+    _PRATA2019_CACHE = {
+        'wn': raw['wn'],
+        'a_i1': raw['a_i1'],
+        'b_i1': raw['b_i1'],
+        'c_i1': raw['c_i1'],
+        'd_i1': raw['d_i1'],
+        'a_i2': raw['a_i2'],
+        'b_i2': raw['b_i2'],
+        'c_i2': raw['c_i2'],
+        'd_i2': raw['d_i2'],
+    }
+
+    logger.debug(
+        f"Loaded Prata2019 coefficients: wn range = "
+        f"[{_PRATA2019_CACHE['wn'][0]:.0f}, {_PRATA2019_CACHE['wn'][-1]:.0f}] cm⁻¹"
+    )
+
+    return _PRATA2019_CACHE
+
+
+def write_ri(ri: RefrIndex, path: str | Path) -> None:
+    """
+    Write a RefrIndex to ARIA ``.ri`` file format.
+
+    Enables round-trip: synthetic RI → file → load via ARIADatabase.
+
+    Parameters
+    ----------
+    ri : RefrIndex
+        Refractive index data to write.
+    path : str or Path
+        Output file path (typically `*.ri`).
+
+    Notes
+    -----
+    The file is written in ARIA format:
+    - Header lines: ``#KEYWORD = value``
+    - Data: 3-column ASCII (wavenumber, n, k) with optional spacing
+    - WAVN is the default gridding (user can override with wavelength if needed)
+
+    Examples
+    --------
+    >>> from mieEODG.composition import BulkComposition
+    >>> comp = BulkComposition(sio2=62.0, al2o3=16.0, fe2o3=6.0, mgo=3.5, cao=6.0)
+    >>> wn = np.arange(650, 1350, 10)
+    >>> ri = ash_refrindex(wn, comp=comp, rock_type='andesite')
+    >>> write_ri(ri, 'my_ash.ri')
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(path, 'w') as f:
+        # Write header
+        f.write(f"#SUBSTANCE = {ri.header.get('SUBSTANCE', 'Unknown')}\n")
+        f.write(f"#CITATION = {ri.header.get('CITATION', '')}\n")
+        if 'MODEL' in ri.header:
+            f.write(f"#MODEL = {ri.header['MODEL']}\n")
+
+        # Add composition if available
+        if ri.composition:
+            comp_str = ', '.join(f"{k}={v:.4f}" for k, v in ri.composition.items())
+            f.write(f"#COMPOSITION = {comp_str}\n")
+
+        # Format line
+        f.write("#FORMAT = WAVN N K\n")
+
+        # Data: wavenumber, n, k
+        for wn_val, n_val, k_val in zip(ri.wavenumber, ri.n, ri.k):
+            f.write(f"{wn_val:10.4f} {n_val:10.6f} {k_val:10.6f}\n")
+
+    logger.info(f"Refractive index written → {path}")

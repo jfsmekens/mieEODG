@@ -1,0 +1,247 @@
+{
+  "H2SO4": {
+    "common_name": "Sulphuric acid",
+    "sweep_type": "r0 \u00d7 (composition \u00d7 temperature)",
+    "total_files": 72,
+    "by_source": {
+      "Wagner 2008": {
+        "file_count": 16,
+        "temperature_points": 16,
+        "temperature_range": [
+          205,
+          235
+        ],
+        "composition_points": 8,
+        "composition_values": [
+          "10 wt%",
+          "15 wt%",
+          "20 wt%",
+          "25 wt%",
+          "30 wt%",
+          "33 wt%",
+          "36 wt%",
+          "37 wt%"
+        ]
+      },
+      "Palmer 1975": {
+        "file_count": 6,
+        "temperature_points": 1,
+        "temperature_range": [
+          300,
+          300
+        ],
+        "composition_points": 6,
+        "composition_values": [
+          "25 wt%",
+          "38 wt%",
+          "50 wt%",
+          "75 wt%",
+          "84.5 wt%",
+          "95.6 wt%"
+        ]
+      },
+      "Unknown": {
+        "file_count": 6,
+        "temperature_points": 1,
+        "temperature_range": [
+          300,
+          300
+        ],
+        "composition_points": 6,
+        "composition_values": [
+          "25 wt%",
+          "38 wt%",
+          "50 wt%",
+          "75 wt%",
+          "84.5 wt%",
+          "95.6 wt%"
+        ]
+      },
+      "Myhre 2003": {
+        "file_count": 32,
+        "temperature_points": 14,
+        "temperature_range": [
+          203,
+          298
+        ],
+        "composition_points": 7,
+        "composition_values": [
+          "38 wt%",
+          "48 wt%",
+          "58 wt%",
+          "65 wt%",
+          "72 wt%",
+          "76 wt%",
+          "81 wt%"
+        ]
+      },
+      "Tisdale 1998": {
+        "file_count": 8,
+        "temperature_points": 5,
+        "temperature_range": [
+          203,
+          214
+        ],
+        "composition_points": 8,
+        "composition_values": [
+          " 49.9 - 50.1 wt%",
+          "42.5 wt%",
+          "55.0 - 55.2 wt%",
+          "61.6 - 61.7 wt%",
+          "65.2 - 65.5 wt%",
+          "70.2 - 70.3 wt%",
+          "75.0 wt%",
+          "79.9 - 80.0 wt%"
+        ]
+      },
+      "Niedziela 1999": {
+        "file_count": 4,
+        "temperature_points": 4,
+        "temperature_range": [
+          200,
+          240
+        ],
+        "composition_points": 4,
+        "composition_values": [
+          "50 wt%",
+          "61 wt%",
+          "72 wt%",
+          "80 wt%"
+        ]
+      }
+    }
+  },
+  "HNO3": {
+    "common_name": "HNO3",
+    "sweep_type": "r0 \u00d7 (composition \u00d7 temperature)",
+    "total_files": 63,
+    "by_source": {
+      "Biermann 2000": {
+        "file_count": 29,
+        "temperature_points": 7,
+        "temperature_range": [
+          213,
+          293
+        ],
+        "composition_points": 7,
+        "composition_values": [
+          "0%",
+          "10%",
+          "20%",
+          "30%",
+          "40%",
+          "45%",
+          "50%"
+        ]
+      },
+      "Unknown": {
+        "file_count": 29,
+        "temperature_points": 7,
+        "temperature_range": [
+          213,
+          293
+        ],
+        "composition_points": 7,
+        "composition_values": [
+          "0%",
+          "10%",
+          "20%",
+          "30%",
+          "40%",
+          "45%",
+          "50%"
+        ]
+      },
+      "Norman 1999": {
+        "file_count": 5,
+        "temperature_points": 1,
+        "temperature_range": [
+          220,
+          220
+        ],
+        "composition_points": 5,
+        "composition_values": [
+          "35%",
+          "45%",
+          "54%",
+          "63%",
+          "70%"
+        ]
+      }
+    }
+  },
+  "H2O-supercooled": {
+    "common_name": "Supercooled water",
+    "sweep_type": "r0 \u00d7 temperature",
+    "total_files": 12,
+    "by_source": {
+      "Wagner 2005": {
+        "file_count": 4,
+        "temperature_points": 4,
+        "temperature_range": [
+          238,
+          269
+        ],
+        "composition_points": 0,
+        "composition_values": []
+      },
+      "Rowe 2020": {
+        "file_count": 4,
+        "temperature_points": 4,
+        "temperature_range": [
+          240,
+          273
+        ],
+        "composition_points": 0,
+        "composition_values": []
+      },
+      "Zasetsky 2005": {
+        "file_count": 4,
+        "temperature_points": 4,
+        "temperature_range": [
+          240,
+          273
+        ],
+        "composition_points": 0,
+        "composition_values": []
+      }
+    }
+  },
+  "H2O-ice": {
+    "common_name": "Water ice",
+    "sweep_type": "r0 \u00d7 temperature",
+    "total_files": 14,
+    "by_source": {
+      "Curtis 2005": {
+        "file_count": 8,
+        "temperature_points": 8,
+        "temperature_range": [
+          106,
+          176
+        ],
+        "composition_points": 0,
+        "composition_values": []
+      },
+      "Rajaram 2001": {
+        "file_count": 4,
+        "temperature_points": 4,
+        "temperature_range": [
+          166,
+          196
+        ],
+        "composition_points": 0,
+        "composition_values": []
+      },
+      "Zasetsky 2005": {
+        "file_count": 2,
+        "temperature_points": 2,
+        "temperature_range": [
+          200,
+          235
+        ],
+        "composition_points": 0,
+        "composition_values": []
+      }
+    }
+  }
+}

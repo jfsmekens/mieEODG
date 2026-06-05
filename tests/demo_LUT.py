@@ -26,23 +26,22 @@ from tqdm.auto import tqdm
 from mieEODG import AerosolXSC, AerosolLUT, ARIADatabase, LogNormalDist, get_cmap, ARIA_DEFAULTS
 from mieEODG.plotting import _add_top_axis, plot_lut
 
+from demo_config import make_wavenumber_grid, get_output_path
+
 # ===========================================================================
 # USER CONFIGURATION
 # ===========================================================================
 
-# ---------------------------------------------------------------------------
-# Spectral grid
-# ---------------------------------------------------------------------------
-WAVN_MIN  = 650.0     # cm⁻¹
-WAVN_MAX  = 1350.0    # cm⁻¹
-WAVN_STEP = 1.0       # cm⁻¹  (decrease for finer resolution, costs more memory)
+# Spectral grid (thermal IR, 1 cm⁻¹ resolution)
+# Decrease WAVN_STEP for finer resolution, but this costs more memory
+WAVN_STEP = 1.0       # cm⁻¹
 
 # ---------------------------------------------------------------------------
 # Size grid
 # ---------------------------------------------------------------------------
 S         = 1.5       # log-normal spread parameter
 R0_MIN_UM = 0.1       # µm — lower bound of r0 sweep
-R0_MAX_UM = 10.0      # µm — upper bound of r0 sweep
+R0_MAX_UM = 2.0       # µm — upper bound of r0 sweep
 N_LUT     = 10        # number of LUT nodes (log-spaced over [R0_MIN_UM, R0_MAX_UM])
 N_DENSE   = 50        # number of ground-truth evaluations for Part 1 validation
 
@@ -83,7 +82,7 @@ PART2_SPECIES = {
 # DERIVED QUANTITIES  (do not edit below unless you know what you're doing)
 # ===========================================================================
 
-wavenumber = np.arange(WAVN_MIN, WAVN_MAX + WAVN_STEP / 2, WAVN_STEP)
+wavenumber = make_wavenumber_grid('thermal_ir', wn_step=WAVN_STEP)
 
 R0_LUT_UM = np.logspace(np.log10(R0_MIN_UM), np.log10(R0_MAX_UM), N_LUT)
 
@@ -101,8 +100,6 @@ R0_PLOT_UM = np.logspace(np.log10(R0_MIN_UM), np.log10(R0_MAX_UM), 200)
 NORM_LUT   = mcolors.LogNorm(vmin=R0_LUT_UM[0],   vmax=R0_LUT_UM[-1])
 NORM_DENSE = mcolors.LogNorm(vmin=R0_DENSE_UM[0], vmax=R0_DENSE_UM[-1])
 NORM_PLOT  = mcolors.LogNorm(vmin=R0_MIN_UM,       vmax=R0_MAX_UM)
-
-OUTPUT_DIR = Path(__file__).parent
 
 db = ARIADatabase()
 
@@ -230,7 +227,7 @@ fig1.suptitle(
     fontsize=10,
 )
 
-out_p1 = OUTPUT_DIR / f'demo_LUT_p1_{PART1_SPECIES.replace("/", "_")}.png'
+out_p1 = get_output_path('lut', f'p1_interpolation_validation.png')
 fig1.savefig(out_p1, dpi=150, bbox_inches='tight')
 print(f'\nFigure saved → {out_p1}')
 
@@ -258,7 +255,7 @@ suptitle_p2 = (
 # Remap from PART2_SPECIES display labels to LUT objects for plot_lut
 luts_display = {label: luts_p2[cat] for cat, label in PART2_SPECIES.items()}
 
-out_p2 = OUTPUT_DIR / 'demo_LUT_p2.png'
+out_p2 = get_output_path('lut', 'p2_multispecies_mec_survey.png')
 plot_lut(
     luts_display,
     quantity='MEC',

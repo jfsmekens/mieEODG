@@ -29,7 +29,8 @@ readRI              : Read a single .ri file.
 
 from .quadrature import quadrature, shiftQuadrature
 from .size_dist import LogNormalDist, ModifiedGammaDist, GaussianDist, createDist
-from .refindex import ARIADatabase, RefrIndex, readRI
+from .refindex import ARIADatabase, RefrIndex, readRI, ash_refrindex, write_ri
+from .composition import BulkComposition, nbot_from_composition
 from .aerosol import AerosolXSC
 from .lut import AerosolLUT
 from .units import (
@@ -38,7 +39,8 @@ from .units import (
     r_cm_from_um, r_um_from_cm,
     wn_grid_from_um, wn_grid_from_nm,
 )
-from .plotting import plot_spectrum, plot_lut_sweep, plot_lut
+from .plotting import plot_spectrum, plot_lut_sweep, plot_lut, plot_size_dist
+from .rfm import write_rfm_xsc
 from .constants import (
     DENSITY_WATER, DENSITY_ICE, DENSITY_ASH, DENSITY_DUST,
     DENSITY_SEA_SALT, DENSITY_BLACK_CARBON, DENSITY_CALCITE, DENSITY_QUARTZ,
@@ -83,6 +85,11 @@ __all__ = [
     "ARIADatabase",
     "RefrIndex",
     "readRI",
+    "ash_refrindex",
+    "write_ri",
+    # Composition
+    "BulkComposition",
+    "nbot_from_composition",
     # Unit conversions
     "wn_from_um",
     "wn_from_nm",
@@ -96,6 +103,9 @@ __all__ = [
     "plot_spectrum",
     "plot_lut_sweep",
     "plot_lut",
+    "plot_size_dist",
+    # RFM export
+    "write_rfm_xsc",
     # Constants
     "DENSITY_WATER",
     "DENSITY_ICE",

@@ -135,6 +135,17 @@ class _AerosolResult:
     V_avg:   float   # mean volume [cm³]
     G_avg:   float   # mean geometric cross-section [cm²]
 
+    # Phase matrix — only populated when theta_pts is supplied to compute()
+    # shape (N_wn, N_theta, 4) — columns are [F11, F33, F12, F34]
+    # normalised to (1/2) * integral(F11, d(cosθ)) = 1
+    phase_matrix: np.ndarray | None = None
+    theta:        np.ndarray | None = None   # scattering angles [degrees]
+
+    # Legendre coefficients — only populated when n_legendre is supplied to compute()
+    # shape (N_wn, n_legendre) — DISORT pmom convention:
+    #   P(cosθ) = Σ_l (2l+1) · pmom[l] · P_l(cosθ),  pmom[0] = 1
+    pmom: np.ndarray | None = None
+
 
 # ---------------------------------------------------------------------------
 # Main class
@@ -239,7 +250,12 @@ class AerosolXSC:
     # Computation
     # ------------------------------------------------------------------
 
-    def compute(self, progress: bool | str = False) -> 'AerosolXSC':
+    def compute(
+        self,
+        progress:    bool | str = False,
+        theta_pts:   np.ndarray | None = None,
+        n_legendre:  int | None = None,
+    ) -> 'AerosolXSC':
         """
         Run the Mie size-distribution integration and populate :attr:`result`.
 
@@ -248,6 +264,27 @@ class AerosolXSC:
         progress : bool or str
             If True or a string, display a tqdm progress bar.  A string value
             is used as the bar label.  Default False.
+        theta_pts : np.ndarray or None
+            Scattering angles [degrees] at which to compute the phase matrix.
+            If supplied, the size-integrated phase matrix
+            [F11, F33, F12, F34] is stored in :attr:`phase_matrix` with shape
+            ``(N_wn, N_theta, 4)``, normalised to the RT convention
+            ``(1/2) * integral(F11, d(cosθ)) = 1``.  If *None* (default),
+            only bulk efficiencies and the asymmetry parameter ``g`` are
+            computed.
+
+            .. note::
+                Phase matrix and Legendre expansion are only supported with
+                ``backend='python'``.  Passing ``theta_pts`` or ``n_legendre``
+                with ``backend='fortran'`` raises ``NotImplementedError``.
+
+        n_legendre : int or None
+            Number of Gauss-Legendre quadrature points to use for the
+            Legendre expansion of F11.  If supplied, ``pmom`` is populated
+            with shape ``(N_wn, n_legendre)``, following the DISORT convention:
+            ``P(cosθ) = Σ_l (2l+1) · pmom[l] · P_l(cosθ)``, ``pmom[0] = 1``.
+            The quadrature points are chosen internally; the user does not need
+            to supply angles.  May be requested alongside ``theta_pts``.
 
         Returns
         -------
@@ -259,12 +296,22 @@ class AerosolXSC:
         ------
         ImportError
             If ``backend='fortran'`` and the compiled extension is not available.
+        NotImplementedError
+            If ``theta_pts`` or ``n_legendre`` is supplied with
+            ``backend='fortran'``.
         ValueError
             If ``backend`` is not ``'python'`` or ``'fortran'``.
         """
         if self.backend == 'python':
-            self._compute_python(progress)
+            self._compute_python(progress, theta_pts=theta_pts,
+                                 n_legendre=n_legendre)
         elif self.backend == 'fortran':
+            if theta_pts is not None or n_legendre is not None:
+                raise NotImplementedError(
+                    "Phase matrix and Legendre expansion are not supported by "
+                    "the Fortran backend.  Use backend='python' when "
+                    "theta_pts or n_legendre is supplied."
+                )
             self._compute_fortran()
         else:
             raise ValueError(
@@ -272,13 +319,45 @@ class AerosolXSC:
             )
         return self
 
-    def _compute_python(self, progress: bool | str = False) -> None:
+    def _compute_python(
+        self,
+        progress:   bool | str = False,
+        theta_pts:  np.ndarray | None = None,
+        n_legendre: int | None = None,
+    ) -> None:
         """Size-distribution integration via the pure-Python/NumPy kernel."""
-        prog_arg: bool | str
-        if progress is True:
-            prog_arg = self.ri.substance or 'AerosolXSC'
+        from .legendre import legendreExpand
+        from .quadrature import quadrature
+
+        prog_arg: bool | str = self.ri.substance or 'AerosolXSC' if progress is True else progress
+
+        # --- Build the combined cosine array for a single mieSizeDist call ---
+        # Gauss-Legendre quadrature points for Legendre expansion (on cosθ ∈ [-1, 1])
+        qv_leg: np.ndarray | None = None
+        qw_leg: np.ndarray | None = None
+        theta_deg: np.ndarray | None = None
+        mu_user:   np.ndarray | None = None
+
+        if n_legendre is not None:
+            qv_leg, qw_leg = quadrature('G', n_legendre)   # cosines on [-1, 1]
+
+        if theta_pts is not None:
+            theta_deg = np.asarray(theta_pts, dtype=np.float64)
+            mu_user   = np.cos(np.deg2rad(theta_deg))
+
+        # Merge angle arrays; remember split index so we can separate afterwards
+        if qv_leg is not None and mu_user is not None:
+            mu_all = np.concatenate([qv_leg, mu_user])
+            split  = len(qv_leg)
+        elif qv_leg is not None:
+            mu_all = qv_leg
+            split  = len(qv_leg)
+        elif mu_user is not None:
+            mu_all = mu_user
+            split  = 0
         else:
-            prog_arg = progress
+            mu_all = None
+            split  = 0
 
         res = mieSizeDist(
             self.dist,
@@ -286,6 +365,7 @@ class AerosolXSC:
             None,        # Nd embedded in dist
             self.wn,
             self.ri.Cm,
+            angles=mu_all,
             n_pts=self.n_pts,
             progress=prog_arg,
         )
@@ -307,14 +387,45 @@ class AerosolXSC:
         MSC   = B_sca / (self.density * V_avg)
         MAC   = MEC - MSC
 
+        # SPM from mieSizeDist: shape (4, N_angles_total, N_wn)
+        phase_matrix: np.ndarray | None = None
+        pmom:         np.ndarray | None = None
+
+        if res.SPM is not None:
+            # Split SPM back into Legendre and user-angle portions
+            if n_legendre is not None:
+                spm_leg  = res.SPM[:, :split, :]        # (4, n_leg, N_wn)
+                spm_user = res.SPM[:, split:, :] if mu_user is not None else None
+            else:
+                spm_leg  = None
+                spm_user = res.SPM
+
+            # Legendre expansion of F11 → pmom
+            if spm_leg is not None:
+                n_wn  = len(self.wn)
+                pmom  = np.zeros((n_wn, n_legendre))
+                l_idx = np.arange(n_legendre, dtype=np.float64)
+                for i in range(n_wn):
+                    f11_i      = spm_leg[0, :, i]   # F11 at Gauss points, wn i
+                    lc, _      = legendreExpand(f11_i, qv_leg, qw_leg)
+                    # DISORT convention: pmom[l] = lc[l] / (2l+1)
+                    pmom[i, :] = lc[:n_legendre] / (2.0 * l_idx + 1.0)
+
+            # Phase matrix at user angles: transpose to (N_wn, N_theta, 4)
+            if spm_user is not None:
+                phase_matrix = np.moveaxis(spm_user, [0, 1, 2], [2, 1, 0])
+
         self.result = _AerosolResult(
-            wavenumber = self.wn,
+            wavenumber   = self.wn,
             Q_ext = Q_ext,  Q_sca = Q_sca,  Q_abs = Q_abs,
             C_ext = C_ext,  C_sca = C_sca,  C_abs = C_abs,
             B_ext = B_ext,  B_sca = B_sca,  B_abs = B_abs,
             MEC   = MEC,    MSC   = MSC,    MAC   = MAC,
             g     = res.g,
             N_avg = N_avg,  V_avg = V_avg,  G_avg = G_avg,
+            phase_matrix = phase_matrix,
+            theta        = theta_deg,
+            pmom         = pmom,
         )
 
     def _compute_fortran(self) -> None:
@@ -424,6 +535,60 @@ class AerosolXSC:
         """Asymmetry parameter."""
         return self._require_result('g').g
 
+    @property
+    def phase_matrix(self) -> np.ndarray:
+        """
+        Size-integrated scattering phase matrix, shape ``(N_wn, N_theta, 4)``.
+
+        Columns are [F11, F33, F12, F34], normalised to the RT convention
+        ``(1/2) * integral(F11, d(cosθ)) = 1``.
+
+        Raises
+        ------
+        RuntimeError
+            If :meth:`compute` has not been called, or if it was called
+            without supplying ``theta_pts``.
+        """
+        r = self._require_result('phase_matrix')
+        if r.phase_matrix is None:
+            raise RuntimeError(
+                "'phase_matrix' is not available.  Call compute(theta_pts=...) "
+                "with an array of scattering angles."
+            )
+        return r.phase_matrix
+
+    @property
+    def theta(self) -> np.ndarray:
+        """Scattering angles [degrees] used for the phase matrix computation."""
+        r = self._require_result('theta')
+        if r.theta is None:
+            raise RuntimeError(
+                "'theta' is not available.  Call compute(theta_pts=...) "
+                "with an array of scattering angles."
+            )
+        return r.theta
+
+    @property
+    def pmom(self) -> np.ndarray:
+        """
+        Legendre expansion coefficients of F11, shape ``(N_wn, n_legendre)``.
+
+        Follows the DISORT ``pmom`` convention:
+        ``P(cosθ) = Σ_l (2l+1) · pmom[l] · P_l(cosθ)``, ``pmom[0] = 1``.
+
+        Raises
+        ------
+        RuntimeError
+            If :meth:`compute` was not called with ``n_legendre`` supplied.
+        """
+        r = self._require_result('pmom')
+        if r.pmom is None:
+            raise RuntimeError(
+                "'pmom' is not available.  Call compute(n_legendre=N) "
+                "with the desired number of Legendre terms."
+            )
+        return r.pmom
+
     # ------------------------------------------------------------------
     # Upsampling
     # ------------------------------------------------------------------
@@ -497,8 +662,7 @@ class AerosolXSC:
 
     def _save_npz(self, path: Path, r: _AerosolResult) -> None:
         dist_params = self._dist_params_dict()
-        np.savez_compressed(
-            path,
+        arrays: dict = dict(
             wavenumber = r.wavenumber,
             Q_ext = r.Q_ext,  Q_sca = r.Q_sca,  Q_abs = r.Q_abs,
             C_ext = r.C_ext,  C_sca = r.C_sca,  C_abs = r.C_abs,
@@ -515,6 +679,12 @@ class AerosolXSC:
             dist_type      = np.bytes_(type(self.dist).__name__),
             **{f'dist_{k}': np.float64(v) for k, v in dist_params.items()},
         )
+        if r.phase_matrix is not None:
+            arrays['phase_matrix'] = r.phase_matrix
+            arrays['theta']        = r.theta
+        if r.pmom is not None:
+            arrays['pmom'] = r.pmom
+        np.savez_compressed(path, **arrays)
         logger.info("Saved → %s", path)
 
     def _save_nc(self, path: Path, r: _AerosolResult) -> None:
@@ -544,6 +714,19 @@ class AerosolXSC:
             ]:
                 v = ds.createVariable(name, 'f8', ('wavenumber',))
                 v[:] = arr
+
+            if r.phase_matrix is not None:
+                ds.createDimension('theta', r.phase_matrix.shape[1])
+                ds.createDimension('spm_component', 4)
+                theta_var = ds.createVariable('theta', 'f8', ('theta',))
+                theta_var[:] = r.theta
+                theta_var.units = 'degrees'
+                theta_var.long_name = 'scattering angle'
+                spm_var = ds.createVariable(
+                    'phase_matrix', 'f8', ('wavenumber', 'theta', 'spm_component'))
+                spm_var[:] = r.phase_matrix
+                spm_var.long_name = 'phase matrix [F11, F33, F12, F34]'
+                spm_var.normalization = '(1/2) * integral(F11, d(cos_theta)) = 1'
 
             # Global attributes
             ds.density    = float(self.density)
@@ -641,8 +824,12 @@ class AerosolXSC:
         obj.n_pts   = 100  # not stored; default
         obj.ri      = ri   # may be None if file not found
 
+        phase_matrix = data['phase_matrix'] if 'phase_matrix' in data else None
+        theta        = data['theta']        if 'theta'        in data else None
+        pmom         = data['pmom']         if 'pmom'         in data else None
+
         obj.result = _AerosolResult(
-            wavenumber = wn,
+            wavenumber   = wn,
             Q_ext = data['Q_ext'],  Q_sca = data['Q_sca'],  Q_abs = data['Q_abs'],
             C_ext = data['C_ext'],  C_sca = data['C_sca'],  C_abs = data['C_abs'],
             B_ext = data['B_ext'],  B_sca = data['B_sca'],  B_abs = data['B_abs'],
@@ -651,8 +838,34 @@ class AerosolXSC:
             N_avg = float(data['N_avg']),
             V_avg = float(data['V_avg']),
             G_avg = float(data['G_avg']),
+            phase_matrix = phase_matrix,
+            theta        = theta,
+            pmom         = pmom,
         )
         return obj
+
+    # ------------------------------------------------------------------
+    # RFM export
+    # ------------------------------------------------------------------
+
+    def to_rfm_xsc(self, path: str | Path, **kwargs) -> None:
+        """
+        Export results to a HITRAN-format ``.xsc`` file for RFM.
+
+        Thin wrapper around :func:`~mieEODG.rfm.write_rfm_xsc`.
+        See that function for full parameter documentation.
+
+        Parameters
+        ----------
+        path : str or Path
+            Output file path (use ``.xsc`` extension).
+        **kwargs
+            Passed directly to :func:`~mieEODG.rfm.write_rfm_xsc`:
+            ``convention``, ``concentration``, ``quantity``, ``T_K``,
+            ``P_torr``.
+        """
+        from .rfm import write_rfm_xsc
+        write_rfm_xsc(self, path, **kwargs)
 
     # ------------------------------------------------------------------
     # Representation

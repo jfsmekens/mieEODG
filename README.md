@@ -12,15 +12,33 @@ precomputed look-up table (LUT) system for fast retrieval use.
 
 ## Features
 
-- **Mie kernel** — Python/NumPy and compiled Fortran backends (40× faster)
-- **Size distributions** — LogNormal, ModifiedGamma, Gaussian
-- **ARIA refractive index database** — bundled `.ri` files for volcanic ash,
-  sulphuric acid, nitric acid, liquid water, ice, mineral dust, sea salt,
+- **Mie kernel** — Python/NumPy and compiled Fortran backends (40× faster);
+  automatic build via custom PEP 517 backend for all Python versions
+- **Size distributions** — LogNormal, ModifiedGamma, Gaussian with easy µm-to-cm
+  conversion via `from_um()` constructor
+- **ARIA refractive index database** — bundled 450+ `.ri` files covering volcanic
+  ash, sulphuric acid, nitric acid, liquid water, ice, mineral dust, sea salt,
   metals, minerals, and more
+- **Prata et al. (2019) volcanic ash RI parameterization** — generate complex
+  refractive indices from bulk oxide composition using linear spectral
+  regression (NBO/T or SiO₂); includes automatic Fe²⁺/Fe³⁺ split via
+  Middlemost (1989) rock-type ratios
 - **Composition-aware density** — auto-resolved from ARIA metadata
-  (H₂SO₄ EOS, ice T-dependent, SiO₂-based ash/rock model)
-- **AerosolLUT** — precomputed (MEC, MSC, MAC) grids over a r0 sweep with
-  PCHIP interpolators; persistent `.nc` cache keyed by SHA-256 hash of inputs
+  (H₂SO₄ EOS via Lund Myhre 2003, ice T-dependent, SiO₂-based ash/rock model)
+- **Single-particle Mie** — `AerosolXSC` for individual calculations with optional
+  phase function and Legendre coefficient export
+- **Size-integrated Mie with LUT caching** — `AerosolLUT` for precomputed grids
+  over r₀ with PCHIP interpolators; persistent `.nc` cache keyed by SHA-256
+  hash of inputs; optional phase function caching for fast DISORT queries
+- **N-dimensional LUTs** — `MultiDimLUT` for sweeps across radius, composition,
+  and temperature with single-source consistency enforcement and automatic ARIA
+  database integration via fuzzy matching
+- **Phase function** — size-integrated scattering phase matrix [F11, F33, F12,
+  F34] at user-supplied angles, plus Legendre expansion coefficients (`pmom`)
+  in DISORT convention; LRU in-memory cache with optional disk storage
+- **RFM export** — write HITRAN-format `.xsc` files for the Reference Forward
+  Model aerosol molecule (index 100); dual-mode export (generic km⁻¹ or
+  pre-scaled cm²/molec); supports multi-tabulation from N-D LUTs
 - **Scientific colormaps** — per-ARIA-category colormaps via
   [cmcrameri](https://www.fabiocrameri.ch/colourmaps/)
 
@@ -77,28 +95,38 @@ pip install -e .
 ### 4. Build the Fortran backend (optional but recommended)
 
 The Fortran backend provides a ~40× speedup for the Mie kernel by replacing
-the Python/NumPy inner loop with a compiled Fortran 90 routine via f2py.
+the Python/NumPy inner loop with a compiled Fortran 90 routine.
 
-**Requirements:** a Fortran compiler (`gfortran` on Linux/macOS, Intel `ifort`,
-or MSVC with MinGW on Windows) and NumPy (for f2py).
+**Key points:**
 
+- **Automatic build:** The custom PEP 517 backend in `build.py` automatically
+  compiles the Fortran extension during `pip install -e .` if a Fortran
+  compiler is available.
+- **Requirements:** a Fortran compiler (`gfortran` on Linux/macOS, Intel `ifort`,
+  or MSVC with MinGW on Windows); NumPy and meson (installed automatically with
+  build dependencies).
+- **Fallback:** If compilation fails, the package installs successfully with the
+  Python backend available as a fallback. All features work at baseline speed.
+
+Verify the build:
+```python
+from mieEODG.fortran._mie_kernel_f90 import mie_batch
+print("Fortran backend available!")
+```
+
+If the import succeeds, pass `backend='fortran'` to `AerosolXSC` or 
+`AerosolLUT.load_or_compute()` to use the compiled extension.
+
+If compilation fails or you need to rebuild:
 ```bash
 cd mieEODG/fortran
 python -m numpy.f2py -c mie_kernel.f90 -m _mie_kernel_f90
 cd ../..
 ```
 
-Verify the build:
-```python
-from mieEODG.fortran._mie_kernel_f90 import mie_batch
-```
-
-If the import succeeds, the Fortran backend is available.  Pass
-`backend='fortran'` to `AerosolXSC` or `AerosolLUT.compute` /
-`AerosolLUT.load_or_compute` to use it.
-
-> **Note:** The compiled `.so` / `.pyd` file is platform-specific and is not
-> committed to the repository.  Each user must build it locally.
+> **Note:** The compiled `.so` / `.pyd` file is platform- and Python-version-specific
+> (e.g., `_mie_kernel_f90.cpython-312-darwin.so`). Each Python environment must build
+> locally; pre-built wheels are not distributed.
 
 ---
 
@@ -123,6 +151,13 @@ xsc = AerosolXSC(
 )
 xsc.compute()
 print(xsc.MEC)   # mass extinction coefficient [cm²/g], shape (N_wn,)
+print(xsc.g)     # asymmetry parameter, shape (N_wn,)
+
+# Phase function and Legendre coefficients (for DISORT)
+theta = np.linspace(0, 180, 181)   # scattering angles [degrees]
+xsc.compute(theta_pts=theta, n_legendre=64)
+print(xsc.phase_matrix)   # [F11, F33, F12, F34], shape (N_wn, 181, 4)
+print(xsc.pmom)           # Legendre coefficients, shape (N_wn, 64), pmom[0]=1
 
 # LUT — precompute over a r0 grid, cache to ~/.mieEODG/lut_cache/
 r0_grid = np.logspace(-1, 1, 20)   # µm
@@ -205,13 +240,20 @@ Located in `tests/`:
 
 | Script | Description |
 |---|---|
-| `demo_mie_size_dist.py` | Volcanic ash — LogNormal vs Gaussian size sweep, 2×3 panel figure |
-| `demo_LUT.py` | LUT validation (Part 1) + multi-species MEC survey (Part 2) |
-| `benchmark_backends.py` | Python vs Fortran speed and accuracy comparison |
+| `demo_single.py` | Single particle Mie calculation — spectral MEC/MSC/MAC |
+| `demo_size_dist.py` | Size distributions vs spectral coefficients — LogNormal, Gaussian, ModifiedGamma with side-by-side PDF + spectra |
+| `demo_LUT.py` | LUT validation (Part 1: interpolation accuracy) + multi-species MEC survey (Part 2) |
+| `demo_multidim_lut.py` | N-dimensional LUT generation and interpolation — r₀ × composition × temperature sweeps with ARIA database integration |
+| `demo_prata.py` | Prata et al. (2019) volcanic ash RI parameterization — SiO₂-based and NBO/T-based composition series |
+| `test_backends.py` (pytest) | Automated backend performance and accuracy tests — Python vs Fortran comparison |
 
-All demo scripts have a `USER CONFIGURATION` section at the top — edit
-spectral range, size grid, backend, and species without touching the
-computation code.
+**Shared configuration:** All demo scripts import `demo_config.py`, which provides
+centralized control over spectral ranges, size grids, and output directories.
+To customize runs globally without editing individual scripts, set the
+`OVERRIDE_*` constants in `demo_config.py` (defaults to `None`, using preset
+values).
+
+Outputs are saved to `tests/demo_output/{demo_name}/` for easy organization.
 
 ---
 
@@ -220,28 +262,40 @@ computation code.
 ```
 mieEODG/
 ├── mieEODG/
-│   ├── aerosol.py          # AerosolXSC — primary computation object
-│   ├── lut.py              # AerosolLUT — LUT generation, caching, forward model
-│   ├── refindex.py         # ARIADatabase, RefrIndex
+│   ├── __init__.py         # public API
+│   ├── aerosol.py          # AerosolXSC — single-particle Mie computation
+│   ├── lut.py              # AerosolLUT — 1-D LUT with PCHIP interpolation
+│   ├── lut_multi.py        # MultiDimLUT — N-D LUT with ARIA integration
+│   ├── refindex.py         # ARIADatabase, RefrIndex, volcanic ash parameterization
+│   ├── rfm.py              # RFM .xsc export (HITRAN format)
 │   ├── size_dist.py        # LogNormalDist, ModifiedGammaDist, GaussianDist
 │   ├── constants.py        # densities, colormaps, ARIA_DEFAULTS
 │   ├── mie_single.py       # mieSingle — single-particle Mie efficiencies
 │   ├── mie_size_dist.py    # mieSizeDist — size-integrated bulk properties
 │   ├── quadrature.py       # Gauss quadrature utilities
+│   ├── plotting.py         # plot_spectrum, plot_lut, plot_size_dist, _add_top_axis
+│   ├── units.py            # spectral unit conversions (wavenumber ↔ wavelength)
 │   ├── fortran/
 │   │   ├── mie_kernel.f90  # Fortran 90 Mie kernel source
 │   │   └── *.so / *.pyd    # compiled extension (build locally, not committed)
 │   └── data/
-│       └── ARIA/           # bundled refractive index database
-│           ├── Acids/
-│           ├── Volcanic_Ash/
-│           ├── Water_and_Ice/
-│           └── ...
+│       ├── ARIA/           # bundled refractive index database (450+ entries)
+│       ├── Prata2019_coeff.csv  # volcanic ash RI parameterization coefficients
+│       ├── lut_design_v1.md     # N-D LUT architecture reference
+│       ├── aria_audit/          # ARIA database audit results
+│       └── aria_metadata_registry.json  # metadata for N-D LUT construction
 ├── tests/
-│   ├── demo_mie_size_dist.py
-│   ├── demo_LUT.py
-│   └── benchmark_backends.py
-└── pyproject.toml
+│   ├── demo_config.py      # centralized configuration for all demos
+│   ├── demo_single.py      # single Mie calculation demo
+│   ├── demo_size_dist.py   # size distribution vs spectra demo
+│   ├── demo_LUT.py         # LUT validation + multi-species survey
+│   ├── demo_multidim_lut.py # N-D LUT generation and interpolation
+│   ├── demo_prata.py       # volcanic ash RI parameterization demo
+│   ├── test_backends.py    # automated backend tests (pytest)
+│   └── demo_output/        # demo figure outputs (git-ignored)
+├── build.py                # custom PEP 517 backend for Fortran compilation
+├── pyproject.toml          # build system config (meson + setuptools)
+└── BUILD_FORTRAN.md        # detailed Fortran build system documentation
 ```
 
 ---

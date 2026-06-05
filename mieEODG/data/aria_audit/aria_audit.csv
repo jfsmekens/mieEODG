@@ -1,0 +1,451 @@
+category,substance,filename,temperature_K,concentration,wn_min,wn_max,n_points,authors,year,doi
+Acids, ALPHA NAT,alphaNAT_Toon_1994.ri,181,,976.0,6989.0,75,,,10.1029/94jd02388
+Acids, BETA NAT,betaNAT_Toon_1994.ri,196,,1057.0,6364.0,73,,,10.1029/94jd02388
+Acids, NAD,NAD_Toon_1994.ri,184,,991.0,6981.0,96,,,10.1029/94jd02388
+Acids, NAM,NAM_Toon_1994.ri,179,,775.0,6002.0,98,,,10.1029/94jd02388
+Acids, NAT,NAT_Richwine_1995.ri,160, 100 %,961.4,4004.5,452,,,10.1029/95gl02650
+Acids, Nitric acid,HNO303_Querry_1980.ri,300, 3.1 wt%,261.4,4987.5,1766,,,10.1063/1.439445
+Acids, Nitric acid,HNO306_Querry_1980.ri,300, 6.1 wt%,261.4,4987.5,1766,,,10.1063/1.439445
+Acids, Nitric acid,HNO311_Querry_1980.ri,300, 11.8 wt%,261.4,4987.5,1766,,,10.1063/1.439445
+Acids, Nitric acid,HNO322_Querry_1980.ri,300, 22.3 wt%,261.4,4987.5,1766,,,10.1063/1.439445
+Acids, Nitric acid,HNO340_Querry_1980.ri,300, 40.3 wt%,261.4,4987.5,1766,,,10.1063/1.439445
+Acids, Nitric acid,HNO368_Remsberg_1974.ri,, 68 wt%,1038.4,1087.8,6,,,10.1021/je60062a003
+Acids, Nitric acid,HNO370_Querry_1980.ri,300, 70 wt%,261.4,4987.5,1765,,,10.1063/1.439445
+Acids, Sulphuric acid,H2SO475_Remsberg_1974.ri,23, 75 wt%,880.0,1571.0,146,,,10.1021/je60062a003
+Acids, Sulphuric acid,H2SO490_Remsberg_1974.ri,23, 90 wt%,855.3,1567.1,173,,,10.1021/je60062a003
+Acids, a-NAD,a-NAD_Toon_1994.ri,153,,1049.0,6160.0,76,,,10.1029/94jd02388
+Acids, a-NAM,a-NAM_Toon_1994.ri,153,,1319.0,6443.0,87,,,10.1029/94jd02388
+Acids, a-NAT,a-NAT_Toon_1994.ri,153,,1350.0,7000.0,83,,,10.1029/94jd02388
+Acids,HNO3,HNO30_263_Biermann_2000.ri,263,0%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO30_263_Biermann_2000_R.ri,263,0%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO30_273_Biermann_2000.ri,273,0%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO30_273_Biermann_2000_R.ri,273,0%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO30_293_Biermann_2000.ri,293,0%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO30_293_Biermann_2000_R.ri,293,0%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO310_273_Biermann_2000.ri,273,10%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO310_273_Biermann_2000_R.ri,273,10%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO310_293_Biermann_2000.ri,293,10%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO310_293_Biermann_2000_R.ri,293,10%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO320_263_Biermann_2000.ri,263,20%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO320_263_Biermann_2000_R.ri,263,20%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO320_273_Biermann_2000.ri,273,20%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO320_273_Biermann_2000_R.ri,273,20%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO320_293_Biermann_2000.ri,293,20%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO320_293_Biermann_2000_R.ri,293,20%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_223_Biermann_2000.ri,223,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_223_Biermann_2000_R.ri,223,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_233_Biermann_2000.ri,233,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_233_Biermann_2000_R.ri,233,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_253_Biermann_2000.ri,253,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_253_Biermann_2000_R.ri,253,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_273_Biermann_2000.ri,273,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_273_Biermann_2000_R.ri,273,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_293_Biermann_2000.ri,293,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO330_293_Biermann_2000_R.ri,293,30%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO335_220_Norman_1999.ri,220,35%,827.5,4700.8,2009,,,10.1029/1999jd900902
+Acids,HNO3,HNO340_213_Biermann_2000.ri,213,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_213_Biermann_2000_R.ri,213,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_233_Biermann_2000.ri,233,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_233_Biermann_2000_R.ri,233,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_253_Biermann_2000.ri,253,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_253_Biermann_2000_R.ri,253,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_273_Biermann_2000.ri,273,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_273_Biermann_2000_R.ri,273,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_293_Biermann_2000.ri,293,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO340_293_Biermann_2000_R.ri,293,40%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_213_Biermann_2000.ri,213,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_213_Biermann_2000_R.ri,213,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_220_Norman_1999.ri,220,45%,827.5,4700.8,2009,,,10.1029/1999jd900902
+Acids,HNO3,HNO345_223_Biermann_2000.ri,223,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_223_Biermann_2000_R.ri,223,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_233_Biermann_2000.ri,233,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_233_Biermann_2000_R.ri,233,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_253_Biermann_2000.ri,253,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_253_Biermann_2000_R.ri,253,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_273_Biermann_2000.ri,273,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_273_Biermann_2000_R.ri,273,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_293_Biermann_2000.ri,293,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO345_293_Biermann_2000_R.ri,293,45%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_223_Biermann_2000.ri,223,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_223_Biermann_2000_R.ri,223,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_233_Biermann_2000.ri,233,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_233_Biermann_2000_R.ri,233,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_253_Biermann_2000.ri,253,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_253_Biermann_2000_R.ri,253,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_273_Biermann_2000.ri,273,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_273_Biermann_2000_R.ri,273,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_293_Biermann_2000.ri,293,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO350_293_Biermann_2000_R.ri,293,50%,74.0,16382.0,12897,,,10.1021/jp992349i
+Acids,HNO3,HNO354_220_Norman_1999.ri,220,54%,827.5,4700.8,2009,,,10.1029/1999jd900902
+Acids,HNO3,HNO363_220_Norman_1999.ri,220,63%,827.5,4700.8,2009,,,10.1029/1999jd900902
+Acids,HNO3,HNO370_220_Norman_1999.ri,220,70%,827.5,4700.8,2009,,,10.1029/1999jd900902
+Acids,Nitric Acid Dihydrate (NAD),NAD_180K_Niedziela_1998.ri,180,,3747.9,715.6,229,,,10.1021/jp981299z
+Acids,Sulphuric acid,H2SO4-10-230K_Wagner_2008.ri,230,10 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-15-219K_Wagner_2008.ri,219,15 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-15-231K_Wagner_2008.ri,231,15 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-20-205K_Wagner_2008.ri,205,20 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-20-220K_Wagner_2008.ri,220,20 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-20-232K_Wagner_2008.ri,232,20 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-25-207K_Wagner_2008.ri,207,25 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-25-221K_Wagner_2008.ri,221,25 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-25-233K_Wagner_2008.ri,233,25 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-30-208K_Wagner_2008.ri,208,30 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-30-223K_Wagner_2008.ri,223,30 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-30-234K_Wagner_2008.ri,234,30 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-33-209K_Wagner_2008.ri,209,33 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-33-235K_Wagner_2008.ri,235,33 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-36-225K_Wagner_2008.ri,225,36 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4-37-211K_Wagner_2008.ri,211,37 wt%,5836.0,800.0,1260,,,10.1021/jp8066102
+Acids,Sulphuric acid,H2SO4_25_Palmer_1975.ri,300,25 wt%,950.0,27800.0,185,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_25_Palmer_1975_R.ri,300,25 wt%,960.0,27800.0,184,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_38_213K_Myhre_2003.ri,213,38 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_38_223K_Myhre_2003.ri,223,38 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_38_243K_Myhre_2003.ri,243,38 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_38_257K_Myhre_2003.ri,257,38 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_38_277K_Myhre_2003.ri,277,38 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_38_298K_Myhre_2003.ri,298,38 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_38_Palmer_1975.ri,300,38 wt%,950.0,27800.0,185,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_38_Palmer_1975_R.ri,300,38 wt%,960.0,27800.0,184,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_42_Tisdale_1998.ri,203,42.5 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_48_213K_Myhre_2003.ri,213,48 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_48_234K_Myhre_2003.ri,234,48 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_48_273K_Myhre_2003.ri,273,48 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_48_298K_Myhre_2003.ri,298,48 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_50_Niedziela_1999.ri,200,50 wt%,2440.1,827.5,100,,,10.1021/jp991323o
+Acids,Sulphuric acid,H2SO4_50_Palmer_1975.ri,300,50 wt%,950.0,27800.0,185,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_50_Palmer_1975_R.ri,300,50 wt%,960.0,27800.0,184,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_50_Tisdale_1998.ri,209, 49.9 - 50.1 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_55_Tisdale_1998.ri,213,55.0 - 55.2 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_58_233K_Myhre_2003.ri,233,58 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_58_243K_Myhre_2003.ri,243,58 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_58_298K_Myhre_2003.ri,298,58 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_61_Niedziela_1999.ri,210,61 wt%,2440.1,827.5,100,,,10.1021/jp991323o
+Acids,Sulphuric acid,H2SO4_61_Tisdale_1998.ri,214,61.6 - 61.7 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_65_223K_Myhre_2003.ri,223,65 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_65_243K_Myhre_2003.ri,243,65 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_65_263K_Myhre_2003.ri,263,65 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_65_298K_Myhre_2003.ri,298,65 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_65_Tisdale_1998.ri,214,65.2 - 65.5 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_70_Tisdale_1998.ri,211,70.2 - 70.3 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_72_203K_Myhre_2003.ri,203,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_213K_Myhre_2003.ri,213,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_223K_Myhre_2003.ri,223,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_233K_Myhre_2003.ri,233,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_245K_Myhre_2003.ri,245,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_253K_Myhre_2003.ri,253,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_298K_Myhre_2003.ri,298,72 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_72_Niedziela_1999.ri,220,72 wt%,2440.1,827.5,100,,,10.1021/jp991323o
+Acids,Sulphuric acid,H2SO4_75_Palmer_1975.ri,300,75 wt%,950.0,27800.0,185,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_75_Palmer_1975_R.ri,300,75 wt%,960.0,27800.0,184,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_75_Tisdale_1998.ri,211,75.0 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_76_203K_Myhre_2003.ri,203,76 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_76_213K_Myhre_2003.ri,213,76 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_76_233K_Myhre_2003.ri,233,76 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_76_273K_Myhre_2003.ri,273,76 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_76_298K_Myhre_2003.ri,298,76 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_80_Niedziela_1999.ri,240,80 wt%,2440.1,827.5,100,,,10.1021/jp991323o
+Acids,Sulphuric acid,H2SO4_80_Tisdale_1998.ri,214,79.9 - 80.0 wt%,989.5,6996.6,78,and,1998,10.1029/98JD02457
+Acids,Sulphuric acid,H2SO4_81_267K_Myhre_2003.ri,267,81 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_81_273K_Myhre_2003.ri,273,81 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_81_298K_Myhre_2003.ri,298,81 wt%,7437.0,400.0,4692,,,10.1021/jp026576n
+Acids,Sulphuric acid,H2SO4_84_Palmer_1975.ri,300,84.5 wt%,950.0,27800.0,185,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_84_Palmer_1975_R.ri,300,84.5 wt%,960.0,27800.0,184,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_95_Palmer_1975.ri,300,95.6 wt%,950.0,27800.0,185,Kent,1975,10.1364/AO.14.000208
+Acids,Sulphuric acid,H2SO4_95_Palmer_1975_R.ri,300,95.6 wt%,960.0,27800.0,184,Kent,1975,10.1364/AO.14.000208
+Combustion_and_Organics,,acetylene_soot_Dazell_1969.ri,,,,,0,,,10.1115/1.3580063
+Combustion_and_Organics,,propane_soot_Dazell_1969.ri,,,,,0,,,10.1115/1.3580063
+Combustion_and_Organics, Diesel Soot,diesel_soot2_Querry_1987.ri,,,1060.0,4000.0,148,,,
+Combustion_and_Organics, Diesel Soot,diesel_soot_Querry_1987.ri,,,1060.0,38461.5,260,,,
+Combustion_and_Organics, Diesel Soot,diesel_soot_heated_Querry_1987.ri,,,1060.0,38461.5,260,,,
+Combustion_and_Organics,Propane Soot,propane_soot_10_Chang_1990.ri,1195,,,,0,and,1880,10.1098/rspa.1990.0107
+Combustion_and_Organics,Propane Soot,propane_soot_6_Chang_1990.ri,1330,,,,0,and,1880,10.1098/rspa.1990.0107
+Combustion_and_Organics,Propane Soot,propane_soot_8_Chang_1990.ri,1250,,,,0,and,1880,10.1098/rspa.1990.0107
+Combustion_and_Organics,mixed weed smoke,mixed-weeds_sutherland_and_khanna_1991.ri,,,3875.0,525.0,135,and,1991, 10.1080/02786829108959495
+Metals,Manganese (Mn),Mn_Querry_1987.ri,,,1080.0,45454.6,261,,,
+Metals,Molybdenum (Mo),Mo_Querry_1987.ri,,,960.0,48467.7,269,,,
+Metals,Zirconium (Zr),Zr_Querry_1987.ri,,,1080.0,45454.6,260,,,
+Minerals,,olivine_Fabian_2001.ri,,,,,0,,,
+Minerals,,olivine_X_Fabian_2001.ri,,,,,0,,,
+Minerals,,olivine_Y_Fabian_2001.ri,,,,,0,,,
+Minerals,,olivine_Z_Fabian_2001.ri,,,,,0,,,
+Minerals,,quartz_Malitson_1965.ri,,,,,0,,,
+Minerals, Anhydrite,anhydrite_X_Querry_1987.ri,,,620.0,4000.0,339,,,
+Minerals, Anhydrite,anhydrite_Y_Querry_1987.ri,,,620.0,4000.0,339,,,
+Minerals, Anhydrite,anhydrite_Z_Querry_1987.ri,,,620.0,4000.0,339,,,
+Minerals, Dolomite,dolomite_E_Querry_1987.ri,,,640.0,4000.0,337,,,
+Minerals, Dolomite,dolomite_O_Querry_1987.ri,,,690.0,4000.0,332,,,
+Minerals, Illite,illite_Querry_1987.ri,,,490.0,4000.0,352,,,
+Minerals, Kaolinite,kaolinite_Querry_1987.ri,,,490.0,4000.0,352,,,
+Minerals, Montmorillonite,montmorillonite_Querry_1987.ri,,,490.0,4000.0,352,,,
+Minerals,Amorphous Quartz,quartz_Popova_1972.ri,,,1050.0,1400.0,21,and,1400,
+Minerals,Amorphous SiO<sub>2</sub>,quartz100_Henning_1997.ri,100,,35.2,6.7,208,and,1997,
+Minerals,Amorphous SiO<sub>2</sub>,quartz10_Henning_1997.ri,10,,35.2,6.7,208,and,1997,
+Minerals,Amorphous SiO<sub>2</sub>,quartz200_Henning_1997.ri,200,,35.2,6.7,208,and,1997,
+Minerals,Amorphous SiO<sub>2</sub>,quartz300_Henning_1997.ri,200,,35.2,6.7,208,and,1997,
+Minerals,Amorphous SiO<sub>2</sub>,quartz_Zolotarev_1970.ri,,,,,0,The optical,1970,
+Minerals,Amorphous quartz powder,quartz_Steyer_1974.ri,,,529.0,400.0,9,,,10.1364/ao.13.001586
+Minerals,Anatase (TiO<sub>2</sub>),anatase_Zeidler_2011.ri,,,,,0,and,2011,10.1051/0004-6361/201015219
+Minerals,Anatase (TiO<sub>2</sub>),anatase_e_Zeidler_2011.ri,,,2.4,5843.4,1955,and,2011,10.1051/0004-6361/201015219
+Minerals,Anatase (TiO<sub>2</sub>),anatase_o_Zeidler_2011.ri,,,2.4,5843.4,1955,and,2011,10.1051/0004-6361/201015219
+Minerals,Brookite (TiO<sub>2</sub>),brookite_X_Zeidler_2011.ri,,,2.4,5843.4,1955,and,2011,10.1051/0004-6361/201015219
+Minerals,Brookite (TiO<sub>2</sub>),brookite_Y_Zeidler_2011.ri,,,2.4,5843.4,1955,and,2011,10.1051/0004-6361/201015219
+Minerals,Brookite (TiO<sub>2</sub>),brookite_Z_Zeidler_2011.ri,,,2.4,5843.4,1955,and,2011,10.1051/0004-6361/201015219
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_100_E_Posch_2007.ri,100,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_100_O_Posch_2007.ri,100,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_10_E_Posch_2007.ri,10,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_10_O_Posch_2007.ri,10,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_200_E_Posch_2007.ri,200,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_200_O_Posch_2007.ri,200,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_300_E_Posch_2007.ri,300,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Calcite (CaCO<sub>3</sub>),calcite_300_O_Posch_2007.ri,300,,4.2,200.0,3957,and,2007,10.1086/521390
+Minerals,Enstatite,enstatite_p_jager_1998.ri,,,8.2,98.9,762,and,1998,
+Minerals,Enstatite,enstatite_s1_jager_1998.ri,,,8.2,98.9,762,and,1998,
+Minerals,Enstatite,enstatite_s2_jager_1998.ri,,,8.2,98.9,762,and,1998,
+Minerals,Fayalite,olivine-fayalite_Fabian_2001.ri,,,1384.2,25000.0,1968,,,
+Minerals,Fayalite,olivine-fayalite_X_Fabian_2001.ri,,,37.0,5000.0,4964,,,
+Minerals,Fayalite,olivine-fayalite_Y_Fabian_2001.ri,,,36.0,5000.0,4965,,,10.1051/0004-6361:20011196
+Minerals,Fayalite,olivine-fayalite_Z_Fabian_2001.ri,,,36.0,5000.0,4965,,,10.1051/0004-6361:20011196
+Minerals,Fe2O3,hematite_E_Longtin_1988.ri,293,,10.0,300.0,28,and,112,
+Minerals,Fe2O3,hematite_O_Longtin_1988.ri,293,,10.0,300.0,28,and,112,
+Minerals,Fe2O3,hematite_Triaud_2005.ri,,,0.2,1000.0,761,private communication,2005,
+Minerals,FeO,wustite_Henning_1995.ri,,5.46 g/cm3,23.0,500.0,37,and,1995,
+Minerals,Fused Quartz,quartz_Bagdade_1968.ri,,,,,0,Bagdade and,2001,10.1016/0022-3697(68)90050-4
+Minerals,Fused Quartz,quartz_Herzberger_1962.ri,,,,,0,Max Herzberger,1962,10.1364/JOSA.52.000420
+Minerals,Fused Quartz,quartz_Rodney_1954.ri,,,,,0,William,1954,10.1364/JOSA.44.000677
+Minerals,Fused Quartz,quartz_Saidov_1982.ri,,,,,0,Saidov and,1300,
+Minerals,Fused Quartz,quartz_Zhilinskii_1987.ri,,,,,0,and,1987,
+Minerals,Fused Silica,quartz_Wray_1969.ri,26,,,,0,Wray and,1969,10.1364/JOSA.59.000774
+Minerals,Fused Silica,quartz_Yamamuro_2006.ri,,,,,0,and,834,10.1117/1.2336241
+Minerals,Glassy SiO<sub>2</sub>,quartz_Tan_2000.ri,,,,,0,Temperature dependence,2000,10.1016/S0022-3697(99)00411-4
+Minerals,High-Fe Olivine,olivine-high-Fe_Y_zeidler_2011.ri,,,6.8,0.4,10294,and,2011,10.1051/0004-6361/201015219
+Minerals,High-Fe Olivine,olivine-high-Fe_Z_zeidler_2011.ri,,,6.8,0.4,10295,and,2011,10.1051/0004-6361/201015219
+Minerals,Low-Fe Olivine,olivine-low-Fe100_X_zeidler_2015.ri,100,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe100_Y_zeidler_2015.ri,100,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe100_Z_zeidler_2015.ri,100,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe10_X_zeidler_2015.ri,10,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe10_Y_zeidler_2015.ri,10,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe10_Z_zeidler_2015.ri,10,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe200_X_zeidler_2015.ri,200,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe200_Y_zeidler_2015.ri,200,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe200_Z_zeidler_2015.ri,200,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe300_X_zeidler_2015.ri,300,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe300_Y_zeidler_2015.ri,300,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe300_Z_zeidler_2015.ri,300,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe551_X_zeidler_2015.ri,551,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe551_Y_zeidler_2015.ri,551,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe551_Z_zeidler_2015.ri,551,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe738_X_zeidler_2015.ri,738,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe738_Y_zeidler_2015.ri,738,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe738_Z_zeidler_2015.ri,738,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe928_X_zeidler_2015.ri,928,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe928_Y_zeidler_2015.ri,928,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe928_Z_zeidler_2015.ri,928,,7.1,50.0,4287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Low-Fe Olivine,olivine-low-Fe_X_Zeidler_2011.ri,,,56.2,5000.0,4051,and,2011,10.1051/0004-6361/201015219
+Minerals,Low-Fe Olivine,olivine-low-Fe_Y_Zeidler_2011.ri,,,54.9,5000.0,4052,and,2011,10.1051/0004-6361/201015219
+Minerals,Low-Fe Olivine,olivine-low-Fe_Z_Zeidler_2011.ri,,,54.9,5000.0,4052,and,2011,10.1051/0004-6361/201015219
+Minerals,Meteoric nano-diamond,meteoric-diamond_Mutschke_2004.ri,,,2.0,110.0,43,and,2004,10.1051/0004-6361:20034544
+Minerals,Montmorillonite,montmorillonite2_Toon_1977.ri,,,640.0,2000.0,73,Pollack and,1971,10.1016/0019-1035(77)90088-4
+Minerals,Montmorillonite,montmorillonite_Egan_1975.ri,,,,,0,,,10.1016/0019-1035(75)90029-9
+Minerals,Montmorillonite,montmorillonite_Toon_1977.ri,,,640.0,2000.0,73,Pollack and,1971,10.1016/0019-1035(77)90088-4
+Minerals,Ortho-enstatite,ortho-enstatite100_X_Zeidler_2015.ri,100,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite100_Y_Zeidler_2015.ri,100,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite100_Z_Zeidler_2015.ri,100,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite10_X_Zeidler_2015.ri,10,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite10_Y_Zeidler_2015.ri,10,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite10_Z_Zeidler_2015.ri,10,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite200_X_Zeidler_2015.ri,200,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite200_Y_Zeidler_2015.ri,200,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite200_Z_Zeidler_2015.ri,200,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite300_X_Zeidler_2015.ri,300,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite300_Y_Zeidler_2015.ri,300,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite300_Z_Zeidler_2015.ri,300,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite551_X_Zeidler_2015.ri,551,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite551_Y_Zeidler_2015.ri,551,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite551_Z_Zeidler_2015.ri,551,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite738_X_Zeidler_2015.ri,738,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite738_Y_Zeidler_2015.ri,738,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite738_Z_Zeidler_2015.ri,738,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite928_X_Zeidler_2015.ri,928,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite928_Y_Zeidler_2015.ri,928,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Ortho-enstatite,ortho-enstatite928_Z_Zeidler_2015.ri,928,,7.1,60.0,5287,and,2015,10.1088/0004-637X/798/2/125
+Minerals,Perovskite (CaTiO<sub>3</sub>),perovskite_Zeidler_2011.ri,,,2.4,5843.4,1955,and,2011,10.1051/0004-6361/201015219
+Minerals,Quartz,quartz_Calingaert_1936.ri,,,,,0,and,1936,
+Minerals,Quartz,quartz_Drummond_1936.ri,,,,,0,The,1936,10.1098/rspa.1936.0005
+Minerals,Quartz,quartz_Efimov_1990.ri,,,660.0,1350.0,70,,,
+Minerals,Quartz,quartz_Simon_1953.ri,,,,,0,and,1953,10.1063/1.1698615
+Minerals,Quartz Glass,quartz_Khashan_2001.ri,24,,1.2,3.0,46,Dispersion of,2001,10.1016/S0030-4018(00)01152-4
+Minerals,Quartz glass,quartz_Mamedov_1982.ri,,,,,0,and,1982,
+Minerals,Rutile (TiO<sub>2</sub>),rutile_e_Zeidler_2011.ri,,,0.7,36.2,2081,and,2011,10.1051/0004-6361/201015219
+Minerals,Rutile (TiO<sub>2</sub>),rutile_o_Zeidler_2011.ri,,,0.7,36.2,2081,and,2011,10.1051/0004-6361/201015219
+Minerals,SiO<sub>2</sub> glass,quartz_Ellis_1979.ri,,,,,0,and,1979,10.1080/13642817908246363
+Minerals,Silica Glass,quartz_Tan_1998.ri,,,,,0,Determination of,1998,10.1016/S0022-3093(97)00438-9
+Minerals,Silica Glass,quartz_Tan_1999.ri,,,,,0,Optical interference,1999,10.1016/S0022-3093(99)00244-6
+Minerals,Silica Glass,quartz_Tan_2001.ri,,,,,0,Refractive,2001,10.1016/S0022-3697(00)00285-7
+Minerals,Silica Glass (SiO<sub>2</sub>),quartz_Kitamura_2007.ri,,,244.0,1622.0,1379,and,2007,10.1364/AO.46.008118
+Minerals,Silicon dioxide (SiO<sub>2</sub>) glass,quartz_Palik_1985.ri,,,0.0,0.0,187,Silicon dioxide,1985,
+Minerals,Silicon dioxide (SiO<sub>2</sub>) glass,quartz_Philipp_1985.ri,,,0.0,40.0,311,Silicon dioxide,1985,
+Minerals,Vitreous Silica,quartz_Wong_1970.ri,,,,,0,Wong and,1970,10.1039/DF9705000094
+Minerals,Zinc Selenide (ZnSe),ZnSe_Querry_1987.ri,,,1360.0,20000.0,233,,,
+Minerals,Zinc Sulphide (ZnS),ZnS_Querry_1987.ri,,,960.0,45454.6,267,,,
+Minerals,quartz,quartz_E_Peterson_1969.ri,24,,20.3,36.0,17,,,10.1029/jc074i028p06947
+Minerals,quartz,quartz_O_Peterson_1969.ri,24,,20.2,36.0,18,,,10.1029/jc074i028p06947
+Organic_Acids,Suwannee River fulvic acid,srfa_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,citric acid,citric-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,glutaric acid,glutaric-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,humic acid,humic-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,malic acid,malic-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,malonic acid,malonic-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,succinic acid,succinic-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Organic_Acids,tartaric acid,tartaric-acid_Laskina_2014.ri,,1-5 wt%,1005.0,4000.0,1554,Kleiber and,2014,10.1080/02786826.2014.904499
+Rocks_and_Conglomerates,Andesite,andesite_Pollack_1973.ri,,,2.5,50.0,82,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Andesite,andesite_Pollack_1973_R.ri,,,2.5,50.0,82,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Basalt,basalt_Pollack_1973.ri,,,2.5,50.0,82,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Basalt,basalt_Pollack_1973_R.ri,,,2.5,50.0,82,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Basalt,basaltic_glass_Pollack_1973.ri,,,2.5,50.0,80,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Basalt,basaltic_glass_Pollack_1973_R.ri,,,2.5,50.0,80,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Granite,granite_Toon_1977.ri,,,640.0,2000.0,73,Pollack and,1971,10.1016/0019-1035(77)90088-4
+Rocks_and_Conglomerates,Obsidian,obsidian1_Pollack_1973.ri,,,2.5,50.0,81,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Obsidian,obsidian1_Pollack_1973_R.ri,,,2.5,50.0,81,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Obsidian,obsidian2_Pollack_1973.ri,,,2.5,50.0,80,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Obsidian,obsidian2_Pollack_1973_R.ri,,,2.5,50.0,80,and,1973,10.1016/0019-1035(73)90115-2
+Rocks_and_Conglomerates,Volcanic pumice,volcanicpumice_Volz_1973.ri,,,9.5,40.0,23,,,10.1364/ao.12.000564
+Rocks_and_Conglomerates,andesite,andesite_Egan_1975.ri,,,,,0,,,10.1016/0019-1035(75)90029-9
+Rocks_and_Conglomerates,basalt,basalt_Egan_1975.ri,,,,,0,,,10.1016/0019-1035(75)90029-9
+Rocks_and_Conglomerates,limonite,limonite_Egan_1975.ri,,,,,0,,,10.1016/0019-1035(75)90029-9
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_100_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_40_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_50_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_60_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_70_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_80_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Bisulfate NH<sub>4</sub>HSO<sub>4</sub>,NH4HSO4_90_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_100_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_213_Earle_2006.ri,213,,674.0,5986.0,2657,,,10.1021/jp064704s
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_223_Earle_2006.ri,223,,790.0,5990.0,1041,,,10.1021/jp064704s
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_243_Earle_2006.ri,223,,790.0,5990.0,1041,,,10.1021/jp064704s
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_298_Earle_2006.ri,298,,670.0,5990.0,2661,,,10.1021/jp064704s
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_40_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_50_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_60_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_70_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_80_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Ammonium Sulphate (NH<sub>4</sub>)<sub>2</sub>SO<sub>4</sub>,(NH4)2SO4_90_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Barium Fluoride (BaF<sub>2</sub>),BaF2_Querry_1987.ri,,,940.0,45454.6,268,,,
+Salts,Caesium Bromide (CsBr),CsBr_Querry_1987.ri,,,947.0,46948.4,268,,,
+Salts,Caesium Iodide (CsI),CsI_Querry_1987.ri,,,940.0,45451.6,268,,,
+Salts,Potassium Chloride (KCl),KCl_Querry_1987.ri,,,940.0,45454.6,267,,,
+Salts,Sodium Chloride (NaCl),NaCl100_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Chloride (NaCl),NaCl50_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Chloride (NaCl),NaCl60_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Chloride (NaCl),NaCl70_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Chloride (NaCl),NaCl80_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Chloride (NaCl),NaCl90_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Chloride (NaCl),NaCl_Querry_1987.ri,,,940.0,45454.6,268,,,
+Salts,Sodium Nitrate (NaNO<sub>3</sub>),NaNO3_10_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Nitrate (NaNO<sub>3</sub>),NaNO3_20_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Nitrate (NaNO<sub>3</sub>),NaNO3_30_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Nitrate (NaNO<sub>3</sub>),NaNO3_40_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Nitrate (NaNO<sub>3</sub>),NaNO3_50_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Nitrate (NaNO<sub>3</sub>),NaNO3_60_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Sulfate (Na<sub>2</sub>SO<sub>4</sub>),Na2SO4_100_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Sulfate (Na<sub>2</sub>SO<sub>4</sub>),Na2SO4_60_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Sulfate (Na<sub>2</sub>SO<sub>4</sub>),Na2SO4_70_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Sulfate (Na<sub>2</sub>SO<sub>4</sub>),Na2SO4_80_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Salts,Sodium Sulfate (Na<sub>2</sub>SO<sub>4</sub>),Na2SO4_90_Cotterell_2017.ri,,,,,0,,,10.5194/acp-17-9837-2017
+Sand_and_Dust,,sand_koepke_1997.ri,,,,,0,,,
+Sand_and_Dust, Clay,clay_Querry_1987.ri,,,490.0,4000.0,352,,,
+Sand_and_Dust,African mineral dust,N32_DiBiagio_2014.ri,,,2.9,25.0,2209,Di,1109,10.5194/acp-14-11093-2014
+Sand_and_Dust,African mineral dust,N93_DiBiagio_2014.ri,,,2.9,25.0,2209,Di,1109,10.5194/acp-14-11093-2014
+Sand_and_Dust,African mineral dust,SOP0-47_DiBiagio_2014.ri,,,2.9,25.0,2209,Di,1109,10.5194/acp-14-11093-2014
+Sand_and_Dust,African mineral dust,SOP1-17_DiBiagio_2014.ri,,,2.9,25.0,2209,Di,1109,10.5194/acp-14-11093-2014
+Sand_and_Dust,African mineral dust,SOP1-8_DiBiagio_2014.ri,,,2.9,25.0,2209,Di,1109,10.5194/acp-14-11093-2014
+Sand_and_Dust,Dust,dust_volz_1972.ri,,,9.2,40.0,24,Infrared refractive,1972,10.1029/jc077i006p01017
+Sand_and_Dust,Meteoric dust,meteoric_dust_shettle_1976.ri,,,9.5,40.0,23,and,1976,
+Sand_and_Dust,Saharan sand,sand_50RHA_peters_2009.ri,,,548.0,6980.0,576,,,
+Sand_and_Dust,Saharan sand,sand_50RHB_peters_2009.ri,,,548.0,6980.0,576,,,
+Sand_and_Dust,Saharan sand,sand_50RH_peters_2009.ri,,,548.0,6980.0,576,,,
+Sand_and_Dust,Saharan sand,sand_dry_peters_2009.ri,,,545.8,6977.4,601,,,
+Sand_and_Dust,Saharan sand,sand_fouquart_1987.ri,,,8.4,40.0,317,,,10.1175/1520-0450(1987)026<0038:oosaro>2.0.co;2
+Sand_and_Dust,Saharan sand,sand_volz_1973.ri,,,6.3,40.0,338,Frederic,1973,10.1364/ao.12.000564
+Sand_and_Dust,Sand,sand_eray_longtin_1988.ri,,,9.8,300.0,29,and,1988,
+Sand_and_Dust,Sand,sand_oray_longtin_1988.ri,,,9.8,300.0,29,and,1988,
+Volcanic_Ash,Askja ash,askja-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Askja ash,askja-ash_Reed.ri,,,573.0,25000.0,1888,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Aso ash,aso-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Aso ash,aso-ash_Reed.ri,,SiO<sub>2</sub>: 52.6%,571.0,25000.0,1890,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Augustine ash,augustine-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Calbuco ash,calbuco-ash_Deguine_2020.ri,,,915.0,32500.0,183,,,
+Volcanic_Ash,Chait&#233;n ash,chaiten-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Chait&#233;n ash,chaiten-ash_Deguine_2020.ri,,,915.0,32500.0,183,,,
+Volcanic_Ash,El Chich&oacute;n Ash,elchichon12km-ash_Patterson_1983.ri,,,,,0,,,10.1029/gl010i004p00317
+Volcanic_Ash,El Chich&oacute;n Ash,elchichon23km-ash_Patterson_1983.ri,,,,,0,,,10.1029/gl010i004p00317
+Volcanic_Ash,El Chich&oacute;n Ash,elchichon80km-ash_Patterson_1983.ri,,,,,0,,,10.1029/gl010i004p00317
+Volcanic_Ash,Etna ash,etna-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Etna ash,etna-ash_Deguine_2020.ri,,,915.0,32500.0,183,,,
+Volcanic_Ash,Eyjafjallaj&#246;kull ash,eyjafjallajokull-ash_Deguine_2020.ri,,,915.0,32500.0,183,,,
+Volcanic_Ash,Eyjafjallaj&#246;kull ash,eyjafjallajokull-ash_Reed.ri,,SiO<sub>2</sub>: 58.5%,569.0,25000.0,1892,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Eyjafjallajökull ash,eyjafjallajokull-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Eyjafjallajökull ash,eyjafjallajokull-ash_Reed2.ri,,SiO<sub>2</sub>: 58.0%,571.0,25000.0,1890,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Gr&#237;msv&#246;tn ash,grimsvotn_ash_Deguine_2020.ri,,,915.0,32500.0,183,,,
+Volcanic_Ash,Grímsvötn ash,grimsvotn-ash_Reed.ri,,SiO<sub>2</sub>: 49.1%,571.0,25000.0,1890,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Grímsvötn ash,grimsvotn_ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Mayon Ash,mayon-ash_Patterson_1975.ri,,,,,0,,,
+Volcanic_Ash,Mount Tongariro ash,tongariro-ash_Reed.ri,,SiO<sub>2</sub>: 59.4%,571.0,25000.0,1890,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Mt. St. Helens ash 18 May 1980 eruption,st-helens-startsosphere-15km-ash_Patterson_1981.ri,,,,,0,,,10.1126/science.211.4484.836
+Volcanic_Ash,Mt. St. Helens ash 18 May 1980 eruption,st-helens-stratosphere-18km-ash_Patterson_1981.ri,,,,,0,,,10.1126/science.211.4484.836
+Volcanic_Ash,Mt. St. Helens ash May 18 1980 eruption,st-helens-boulder-ash_Patterson_1981.ri,,,,,0,,,10.1126/science.211.4484.836
+Volcanic_Ash,Mt. St. Helens ash May 18 1980 eruption,st-helens-bozeman-ash_Patterson_1981.ri,,,,,0,,,10.1126/science.211.4484.836
+Volcanic_Ash,Mt. St. Helens ash May 18 1980 eruption,st-helens-cheney-ash_Patterson_1981.ri,,,,,0,,,10.1126/science.211.4484.836
+Volcanic_Ash,Nisyros ash,nisyros-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Nisyros ash,nisyros-ash_Reed.ri,,,573.0,25000.0,1888,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Okmok ash,okmok-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Puyehue-Cord&#243;n Caulle ash,puyehue-cordon-caulle-ash_Deguine_2020.ri,,,915.0,32500.0,183,,,
+Volcanic_Ash,Spurr ash,spurr-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Spurr ash,spurr-ash_Reed.ri,,,573.0,25000.0,1888,McPheat and,1339,10.1002/2017JD027362
+Volcanic_Ash,Tongariro ash,tongariro-ash_Ball_2015.ri,,,,,0,and,2015,10.1002/2015JD023521
+Volcanic_Ash,Volcan De Fuego ash,volcan-de-fuego-ash_Patterson_1981.ri,,,,,0,,,10.1126/science.211.4484.836
+Water_and_Ice,,H2O_Hale_1973.ri,298,,2.6,20.0,84,,,10.1364/AO.12.000555
+Water_and_Ice,,H2O_Palmer_1974.ri,300,,7800.0,27800.0,54,,,10.1364/JOSA.64.001107
+Water_and_Ice,,H2O_Stegelstein_1981.ri,,,0.1,10000000.0,1219,,,
+Water_and_Ice, Water,H2O265_Kou_1993.ri,265, 100.0%,4740.0,10640.0,296,,,10.1364/ao.32.003531
+Water_and_Ice, Water,H2O295_Kou_1993.ri,295, 100.0%,4740.0,14880.0,508,,,10.1364/ao.32.003531
+Water_and_Ice, Water,H2O_Downing_1975.ri,300,,420.0,5000.0,379,,,10.1029/jc080i012p01656
+Water_and_Ice, Water,H2O_Mcgarragh_2018.ri,300, 100.0%,0.8,1000.0,483,Hollmann and,3397,10.5194/amt-11-3397-2018
+Water_and_Ice, Water Ice,Ice210_Clapp_1995.ri,210, 100 %,3963.0,800.3,3282,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice130_Clapp_1995.ri,130, 100 %,837.0,4004.5,3283,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice140_Clapp_1995.ri,140, 100 %,837.0,4004.7,3284,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice150_Clapp_1995.ri,150, 100 %,837.0,4004.7,3284,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice160_Clapp_1995.ri,160, 100 %,3966.8,800.4,3282,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice170_Clapp_1995.ri,170, 100 %,3964.2,800.4,3281,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice180_Clapp_1995.ri,180, 100 %,3963.0,802.1,3276,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice190_Clapp_1995.ri,190, 100 %,3966.8,800.4,3282,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice200_Clapp_1995.ri,200, 100 %,3966.8,800.4,3282,,,10.1021/j100017a010
+Water_and_Ice, Water Ice,ice248_Kou_1993.ri,248, 100.0%,4760.0,6920.0,109,,,10.1364/ao.32.003531
+Water_and_Ice, Water Ice,ice_Toon_1994.ri,163,,1523.0,6962.0,136,,,10.1029/94jd02388
+Water_and_Ice, Water ice,ICE_Warren_2008.ri,266,,0.1,2000000.0,445,,,10.1029/2007jd009744
+Water_and_Ice,Supercooled water,H2O238_Wagner_2005.ri,238,,2.4,9.1,401,,,10.1021/jp051942z
+Water_and_Ice,Supercooled water,H2O252_Wagner_2005.ri,252,,2.4,9.1,401,,,10.1021/jp051942z
+Water_and_Ice,Supercooled water,H2O258_Wagner_2005.ri,258,,2.4,9.1,401,,,10.1021/jp051942z
+Water_and_Ice,Supercooled water,H2O269_Wagner_2005.ri,269,,2.4,9.1,401,,,10.1021/jp051942z
+Water_and_Ice,Supercooled water,H2O_240K_Rowe_2020.ri,240,,40.5,14999.6,15515,,,10.1029/2020JD032624
+Water_and_Ice,Supercooled water,H2O_253K_Rowe_2020.ri,253,,40.5,14999.6,15515,,,10.1029/2020JD032624
+Water_and_Ice,Supercooled water,H2O_263K_Rowe_2020.ri,263,,40.5,14999.6,15515,,,10.1029/2020JD032624
+Water_and_Ice,Supercooled water,H2O_273K_Rowe_2020.ri,273,,40.5,14999.6,15515,,,10.1029/2020JD032624
+Water_and_Ice,Supercooled water,water240_Zasetsky_2005.ri,240,,499.0,5900.0,5402,,,10.1021/jp044823c
+Water_and_Ice,Supercooled water,water253_Zasetsky_2005.ri,253,,499.0,5900.0,5402,,,10.1021/jp044823c
+Water_and_Ice,Supercooled water,water263_Zasetsky_2005.ri,263,,499.0,5900.0,5402,,,10.1021/jp044823c
+Water_and_Ice,Supercooled water,water273_Zasetsky_2005.ri,273,,499.0,5900.0,5402,,,10.1021/jp044823c
+Water_and_Ice,Water ice,ICE106_Curtis_2005.ri,106,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE116_Curtis_2005.ri,116,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE126_Curtis_2005.ri,126,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE136_Curtis_2005.ri,136,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE146_Curtis_2005.ri,146,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE156_Curtis_2005.ri,156,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE166_Curtis_2005.ri,166,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE166_Rajaram_2001.ri,166,,4454.1,6981.1,97,,,10.1364/ao.40.004449
+Water_and_Ice,Water ice,ICE176_Curtis_2005.ri,176,,210.2,650.1,115,,,10.1364/ao.44.004102
+Water_and_Ice,Water ice,ICE176_Rajaram_2001.ri,176,,4454.1,6981.1,97,,,10.1364/ao.40.004449
+Water_and_Ice,Water ice,ICE186_Rajaram_2001.ri,186,,4454.1,6981.1,97,,,10.1364/ao.40.004449
+Water_and_Ice,Water ice,ICE196_Rajaram_2001.ri,196,,4454.1,6981.1,97,,,10.1364/ao.40.004449
+Water_and_Ice,Water ice,ICE200_Zasetsky_2005.ri,200,,499.0,5900.0,5402,,,10.1021/jp044823c
+Water_and_Ice,Water ice,ICE235_Zasetsky_2005.ri,235,,499.0,5900.0,5402,,,10.1021/jp044823c

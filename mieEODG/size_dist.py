@@ -345,6 +345,60 @@ class ModifiedGammaDist(SizeDistribution):
         # Just return the distribution midpoint for a practical estimate.
         return (self.r_min + self.r_max) / 2.0
 
+    @classmethod
+    def from_um(
+        cls,
+        a_um:     float,
+        b:        float,
+        r_min_um: float,
+        r_max_um: float,
+        *,
+        n: float = 1.0,
+    ) -> 'ModifiedGammaDist':
+        """
+        Construct a :class:`ModifiedGammaDist` with radii specified in µm.
+
+        Parameters
+        ----------
+        a_um : float
+            Effective radius parameter [µm].
+        b : float
+            Effective variance parameter (dimensionless).  Must be > 0.
+        r_min_um : float
+            Lower radius cutoff [µm].
+        r_max_um : float
+            Upper radius cutoff [µm].
+        n : float
+            Total number density.  Default 1.0.
+
+        Returns
+        -------
+        ModifiedGammaDist
+            Instance with all radii converted to cm.
+        """
+        return cls(
+            a     = a_um     * 1e-4,
+            b     = b,
+            r_min = r_min_um * 1e-4,
+            r_max = r_max_um * 1e-4,
+            n     = n,
+        )
+
+    @property
+    def a_um(self) -> float:
+        """Effective radius parameter [µm]."""
+        return self.a * 1e4
+
+    @property
+    def r_min_um(self) -> float:
+        """Lower radius cutoff [µm]."""
+        return self.r_min * 1e4
+
+    @property
+    def r_max_um(self) -> float:
+        """Upper radius cutoff [µm]."""
+        return self.r_max * 1e4
+
     def __repr__(self) -> str:
         return (
             f"ModifiedGammaDist(a={self.a:.4g}, b={self.b:.4g}, "

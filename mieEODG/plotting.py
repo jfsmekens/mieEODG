@@ -10,6 +10,7 @@ Public functions
 plot_spectrum      Plot one or more spectra (MEC / MSC / MAC vs wavenumber).
 plot_lut_sweep     Plot a dense r0 sweep from a single AerosolLUT.
 plot_lut           Multi-panel LUT survey from a dict or list of AerosolLUT objects.
+plot_size_dist     Plot particle size distribution PDF (dN/d ln r vs radius).
 
 Secondary-axis helpers (called internally, exposed for external use)
 ---------------------------------------------------------------------
@@ -33,19 +34,22 @@ logger = logging.getLogger(__name__)
 # Global rcParams — match the demo script figure style
 # ---------------------------------------------------------------------------
 plt.rcParams.update({
-    'font.size':                   10,
+    'font.size':                   11,
     'axes.labelsize':              9,
-    'axes.titlesize':              10,
+    'axes.titlesize':              12,
     'xtick.labelsize':             9,
+    'xtick.direction':             'in',
     'ytick.labelsize':             9,
+    'ytick.direction':             'in',
     'lines.linewidth':             0.9,
     'axes.grid':                   True,
-    'grid.linewidth':              0.3,
-    'grid.alpha':                  0.4,
-    'grid.linestyle':              '-',
+    'grid.linewidth':              0.5,
+    'grid.alpha':                  0.5,
+    'grid.linestyle':              '--',
     'axes.axisbelow':              True,
     'figure.constrained_layout.use': True,
     'axes.formatter.limits':       (-4, 4),
+    'errorbar.capsize':             2,
 })
 
 # ---------------------------------------------------------------------------
@@ -146,6 +150,17 @@ def _add_top_axis(
 # ---------------------------------------------------------------------------
 # Quantity metadata
 # ---------------------------------------------------------------------------
+
+# Radius tick candidates for the size distribution x-axis (µm)
+_R_TICKS_UM: list[float] = [
+    0.001, 0.002, 0.005,
+    0.01, 0.02, 0.05,
+    0.1, 0.2, 0.5,
+    1, 2, 5,
+    10, 20, 50,
+    100, 200, 500,
+]
+_R_TICKS_MAX: int = 10
 
 _QUANTITY_LABELS: dict[str, str] = {
     'MEC': r'MEC  (cm$^2$ g$^{-1}$)',
@@ -484,6 +499,200 @@ def plot_lut(
 
     if suptitle is not None:
         fig.suptitle(suptitle, fontsize=10)
+
+    if save_path is not None:
+        fig.savefig(save_path, dpi=150, bbox_inches='tight')
+        logger.info("Figure saved → %s", save_path)
+    if show:
+        plt.show()
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# plot_size_dist
+# ---------------------------------------------------------------------------
+
+def plot_size_dist(
+    dists,
+    *,
+    r_range_um:  tuple[float, float] | None = None,
+    n_pts:       int = 500,
+    normalize:   bool = True,
+    category:    str | None = None,
+    labels:      list[str] | None = None,
+    yscale:      str = 'linear',
+    style:       str = 'line',
+    title:       str | None = None,
+    fig:         plt.Figure | None = None,
+    show:        bool = True,
+    save_path:   str | Path | None = None,
+) -> plt.Figure:
+    """
+    Plot particle size distribution(s) as dN/d ln r vs radius.
+
+    The y-axis shows ``r · n(r)`` — the number size distribution in
+    logarithmic radius space — which gives the familiar bell-shaped curve
+    on a log-radius axis.  Each curve is optionally normalised to its own
+    peak so shapes can be compared regardless of total number density.
+
+    Parameters
+    ----------
+    dists : SizeDistribution or list or dict
+        A single distribution object, a list of distributions, or a
+        ``dict`` mapping string labels to distributions.  When a list
+        contains distributions with an ``r0_um`` attribute (e.g. a sweep
+        of :class:`~mieEODG.LogNormalDist` or
+        :class:`~mieEODG.size_dist.GaussianDist`), curves are coloured by
+        r0 using the category colormap.
+    r_range_um : (float, float) or None
+        Explicit ``(r_min, r_max)`` in µm.  When ``None``, the range is
+        derived automatically from the ``bounds()`` of each distribution
+        with 20 % log-space padding on each side.
+    n_pts : int
+        Number of radius points for evaluation.  Default 500.
+    normalize : bool
+        If True (default), normalise each curve to its own peak so that
+        the maximum is 1.  Useful for comparing shapes across distributions
+        with different total number densities.
+    category : str or None
+        ARIA category key for colormap selection (e.g. ``'volcanic_ash'``).
+        Used when ``dists`` is a list and distributions do not carry
+        category metadata.  Falls back to the default colour cycle if not
+        supplied.
+    labels : list[str] or None
+        Legend labels, one per distribution.  When ``None``, labels are
+        derived from dict keys (if a dict) or ``repr(dist)`` (if a list).
+        Pass an empty list to suppress the legend entirely.
+    yscale : {'linear', 'log'}
+        Y-axis scale.  Default ``'linear'``.
+    style : {'line', 'shaded', 'hist'}
+        Plot style:
+        - ``'line'`` (default): line plot
+        - ``'shaded'``: filled area (semi-transparent)
+        - ``'hist'``: histogram bars
+    title : str or None
+        Figure title.
+    fig : plt.Figure or None
+        Existing figure for GUI embedding.
+    show : bool
+        Call ``plt.show()`` on exit.
+    save_path : str or Path or None
+        Save path.
+
+    Returns
+    -------
+    plt.Figure
+    """
+    from .constants import get_cmap
+    from .size_dist import SizeDistribution
+
+    # --- Normalise input to list of (label, dist) pairs ---
+    if isinstance(dists, SizeDistribution):
+        items = [(repr(dists), dists)]
+    elif isinstance(dists, dict):
+        items = list(dists.items())
+    else:
+        items = [(repr(d), d) for d in dists]
+
+    if labels is not None and len(labels) > 0:
+        items = [(lab, d) for (_, d), lab in zip(items, labels)]
+
+    n_dists = len(items)
+    if n_dists == 0:
+        raise ValueError("dists must contain at least one distribution.")
+
+    # --- Determine global radius range ---
+    if r_range_um is not None:
+        r_lo, r_hi = float(r_range_um[0]), float(r_range_um[1])
+    else:
+        bounds_cm = [d.bounds() for _, d in items]
+        r_lo = min(b[0] for b in bounds_cm) * 1e4    # cm → µm
+        r_hi = max(b[1] for b in bounds_cm) * 1e4
+        # 20 % log-space padding
+        log_pad = 0.2 * (np.log10(r_hi) - np.log10(r_lo))
+        r_lo = 10 ** (np.log10(r_lo) - log_pad)
+        r_hi = 10 ** (np.log10(r_hi) + log_pad)
+
+    r_um = np.logspace(np.log10(r_lo), np.log10(r_hi), n_pts)
+    r_cm = r_um * 1e-4
+
+    # --- Color scheme ---
+    # Use category colormap keyed by r0_um if all dists expose that attribute
+    has_r0 = all(hasattr(d, 'r0_um') for _, d in items)
+    if has_r0 and n_dists > 1:
+        r0_vals = np.array([d.r0_um for _, d in items])
+        norm_r0 = mcolors.LogNorm(vmin=r0_vals.min(), vmax=r0_vals.max())
+        cmap    = get_cmap(category or '')
+        colors  = [cmap(norm_r0(r0)) for r0 in r0_vals]
+    else:
+        prop_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        colors     = [prop_cycle[i % len(prop_cycle)] for i in range(n_dists)]
+        norm_r0    = None
+        cmap       = None
+
+    # --- Validate parameters ---
+    if yscale not in ('linear', 'log'):
+        raise ValueError(f"yscale must be 'linear' or 'log'; got {yscale!r}")
+    if style not in ('line', 'shaded', 'hist'):
+        raise ValueError(f"style must be 'line', 'shaded', or 'hist'; got {style!r}")
+
+    # --- Figure ---
+    if fig is None:
+        fig, ax = plt.subplots(figsize=(7, 4))
+    else:
+        ax = fig.gca()
+
+    for i, (label, dist) in enumerate(items):
+        n_r    = dist.pdf(r_cm)          # n(r) in cm-based units
+        dndlnr = n_r * r_cm              # dN/d ln r = r · n(r)
+        if normalize:
+            peak = dndlnr.max()
+            if peak > 0:
+                dndlnr = dndlnr / peak
+
+        # Plot with selected style
+        if style == 'line':
+            ax.plot(r_um, dndlnr, color=colors[i], label=label, lw=1.0, alpha=0.9)
+        elif style == 'shaded':
+            ax.fill_between(r_um, dndlnr, color=colors[i], label=label, alpha=0.5)
+            ax.plot(r_um, dndlnr, color=colors[i], lw=0.8, alpha=0.9)
+        elif style == 'hist':
+            ax.bar(r_um, dndlnr, width=np.diff(r_um).mean() * 0.8,
+                   color=colors[i], label=label, alpha=0.7, edgecolor='none')
+
+    ax.set_xscale('log')
+    ax.set_yscale(yscale)
+    ax.set_xlim(r_lo, r_hi)
+    if normalize and yscale == 'linear':
+        ax.set_ylim(bottom=0, top=1.05)
+
+    # Curated x-axis ticks from candidate list
+    visible_ticks = [t for t in _R_TICKS_UM if r_lo <= t <= r_hi]
+    if len(visible_ticks) > _R_TICKS_MAX:
+        step = (len(visible_ticks) + _R_TICKS_MAX - 1) // _R_TICKS_MAX
+        visible_ticks = visible_ticks[::step]
+    if visible_ticks:
+        ax.xaxis.set_ticks(visible_ticks)
+        ax.xaxis.set_ticklabels([f'{t:g}' for t in visible_ticks])
+
+    ax.set_xlabel('Radius (µm)', fontsize=9)
+    y_label = 'dN / d ln r' + (' (normalised)' if normalize else '')
+    ax.set_ylabel(y_label, fontsize=9)
+
+    if title is not None:
+        ax.set_title(title, fontsize=10)
+
+    # Colorbar for r0 sweeps; legend for explicitly labelled dists
+    if has_r0 and n_dists > 1 and cmap is not None:
+        sm = mcm.ScalarMappable(cmap=cmap, norm=norm_r0)
+        sm.set_array([])
+        cbar = fig.colorbar(sm, ax=ax, pad=0.015, fraction=0.04, aspect=20)
+        cbar.set_label('$r_0$ (µm)', fontsize=9)
+        cbar.ax.yaxis.set_major_formatter(
+            plt.FuncFormatter(lambda x, _: f'{x:.2g}')
+        )
+    elif not (labels is not None and len(labels) == 0):
+        ax.legend(fontsize=8)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')

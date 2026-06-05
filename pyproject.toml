@@ -1,56 +1,93 @@
 [build-system]
-requires = ["setuptools >= 61", "numpy"]
-build-backend = "setuptools.build_meta"
+requires = ["setuptools>=61", "numpy", "wheel", "meson", "meson-python"]
+build-backend = "build"
+backend-path = ["."]
+
 
 [project]
 name = "mieEODG"
-version = "0.1.0"
-description = "Mie scattering routines for spherical aerosol particles, ported from the EODG IDL package"
+version = "0.2.0"
+description = "Python package for Mie scattering calculations on spherical aerosol particles, ported from the EODG IDL library"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
+license = {text = "TBD"}
+authors = [
+    {name = "EODG (Earth Observation Data Group)", email = "js4247@nau.edu"}
+]
+keywords = ["Mie", "scattering", "aerosol", "optics", "radiative transfer"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: Physics",
+]
 dependencies = [
-    "numpy",
-    "scipy",
+    "numpy>=1.22",
+    "scipy>=1.8",
 ]
 
 [project.optional-dependencies]
-# LUT persistence
+# LUT persistence (NetCDF)
 lut = [
-    "xarray",
-    "netCDF4",
+    "xarray>=2022.3",
+    "netCDF4>=1.5",
 ]
 # Progress bars
 progress = [
-    "tqdm",
+    "tqdm>=4.60",
 ]
 # Plotting and demo scripts
 plot = [
-    "matplotlib",
-    "cmcrameri",
+    "matplotlib>=3.5",
+    "cmocean>=3.0",
 ]
-# Full install — everything except the Fortran extension (built separately)
+# Full install — everything
 full = [
-    "xarray",
-    "netCDF4",
-    "tqdm",
-    "matplotlib",
-    "cmcrameri",
+    "xarray>=2022.3",
+    "netCDF4>=1.5",
+    "tqdm>=4.60",
+    "matplotlib>=3.5",
+    "cmocean>=3.0",
 ]
-# Development
+# Development and testing
 dev = [
-    "pytest",
-    "pytest-cov",
+    "pytest>=7.0",
+    "pytest-cov>=3.0",
 ]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["mieEODG*"]
+[project.urls]
+Homepage = "https://github.com/EODG/mieEODG"
+Documentation = "https://eodg.atm.ox.ac.uk/MIE/"
+Repository = "https://github.com/EODG/mieEODG.git"
+
+[tool.setuptools]
+packages = ["mieEODG"]
 
 [tool.setuptools.package-data]
 mieEODG = [
     "data/ARIA/**/*.ri",
-    "fortran/*.pyi",
-    # Compiled Fortran extension — included if present (built locally)
-    "fortran/*.so",
-    "fortran/*.pyd",
+    "data/**/*.json",
+    "data/**/*.csv",
+    "data/**/*.md",
+    "fortran/**/*.f90",
+    "fortran/**/*.pyi",
+    "fortran/**/*.so",
+    "fortran/**/*.pyd",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v"
+
+[tool.black]
+line-length = 100
+target-version = ["py311", "py312"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
