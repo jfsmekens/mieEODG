@@ -6,7 +6,7 @@ backend-path = ["."]
 
 [project]
 name = "mieEODG"
-version = "0.2.0"
+version = "0.2.1"
 description = "Python package for Mie scattering calculations on spherical aerosol particles, ported from the EODG IDL library"
 readme = "README.md"
 requires-python = ">=3.11"

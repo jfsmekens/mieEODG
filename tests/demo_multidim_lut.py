@@ -17,12 +17,9 @@ from __future__ import annotations
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-import matplotlib.cm as mcm
 
 from mieEODG.lut_multi import LUTAxis, MultiDimLUT
-from mieEODG.plotting import _add_top_axis
-from mieEODG.constants import get_cmap
+from mieEODG.plotting import plot_lut_slice
 
 from demo_config import make_wavenumber_grid, get_output_path
 
@@ -159,118 +156,72 @@ print(f'  composition mid: {comp_mid:.1f} wt%')
 if temp_mid is not None:
     print(f'  temperature mid: {temp_mid:.0f} K')
 
-# Query full spectrum at midpoints (for reference)
-query_base = {'r0': r0_mid, 'composition': comp_mid}
-if temp_mid is not None:
-    query_base['temperature_K'] = temp_mid
-result_mid = lut.forward(**query_base)
-spectrum_mid = result_mid[QUANTITY]
-
 # ===========================================================================
-# PLOT 1: Sweep r0, fix composition & temperature
+# PLOTTING — Using plot_lut_slice() for composable, reusable panels
 # ===========================================================================
 
 print(f'\nPlotting…')
 
+# Set up multi-panel layout
 n_subplots = 2 if SWEEP_2D else 3
 fig, axes_plot = plt.subplots(1, n_subplots, figsize=(16, 5), constrained_layout=True)
-axes_plot[0].sharex(axes_plot[-1])
 
-# Plot 1: r0 sweep
-ax1 = axes_plot[0]
-for i, comp in enumerate(COMPOSITION_PTS):
-    query = {'r0': r0_mid, 'composition': comp}
-    if temp_mid is not None:
-        query['temperature_K'] = temp_mid
+# Ensure axes_plot is always a list (even for single subplot)
+if n_subplots == 1:
+    axes_plot = [axes_plot]
 
-    # Interpolate across r0 at fixed composition
-    r0_sweep = np.logspace(np.log10(R0_MIN_UM), np.log10(R0_MAX_UM), 30)
-    colors = [cmap(mcolors.Normalize(vmin=R0_MIN_UM, vmax=R0_MAX_UM)(r)) for r in r0_sweep]
+wn_min, wn_max = wavenumber.min(), wavenumber.max()
 
-    for r0, color in zip(r0_sweep, colors):
-        q = {'composition': comp}
-        if temp_mid is not None:
-            q['temperature_K'] = temp_mid
-        q['r0'] = r0
-        res = lut.forward(**q)
-        ax1.plot(wavenumber, res[QUANTITY], color=color, lw=0.8, alpha=0.6)
+# Panel 1: Sweep r0, fix composition & temperature
+plt.sca(axes_plot[0])
+fixed_ax1 = {'composition': comp_mid}
+if temp_mid is not None:
+    fixed_ax1['temperature_K'] = temp_mid
 
-ax1.set_xlim(WAVN_MAX, WAVN_MIN)
-ax1.set_ylim(bottom=0)
-ax1.set_ylabel(f'{QUANTITY}  (cm$^2$ g$^{{-1}}$)', fontsize=10)
-ax1.set_xlabel('Wavenumber (cm$^{-1}$)', fontsize=10)
-ax1.set_title(f'Sweep $r_0$  (composition={comp_mid:.0f} wt%, T={temp_mid:.0f}K)' if temp_mid else
-              f'Sweep $r_0$  (composition={comp_mid:.0f} wt%)', fontsize=10)
-_add_top_axis(ax1)
+plot_lut_slice(
+    lut,
+    sweep_axis='r0',
+    fixed_axes=fixed_ax1,
+    quantity=QUANTITY,
+    n_points=50,
+    fig=fig,
+    show=False,
+)
 
-# Add colorbar for r0
-sm_r0 = mcm.ScalarMappable(cmap=cmap, norm=mcolors.Normalize(vmin=R0_MIN_UM, vmax=R0_MAX_UM))
-sm_r0.set_array([])
-cbar_r0 = fig.colorbar(sm_r0, ax=ax1, pad=0.02, fraction=0.04)
-cbar_r0.set_label('$r_0$ (µm)', fontsize=9)
+# Panel 2: Sweep composition, fix r0 & temperature
+plt.sca(axes_plot[1])
+fixed_ax2 = {'r0': r0_mid}
+if temp_mid is not None:
+    fixed_ax2['temperature_K'] = temp_mid
 
-# ===========================================================================
-# PLOT 2: Sweep composition, fix r0 & temperature
-# ===========================================================================
+plot_lut_slice(
+    lut,
+    sweep_axis='composition',
+    fixed_axes=fixed_ax2,
+    quantity=QUANTITY,
+    n_points=50,
+    fig=fig,
+    show=False,
+)
 
-ax2 = axes_plot[1]
-comp_sweep = np.linspace(COMPOSITION_PTS[0], COMPOSITION_PTS[-1], 30)
-colors_comp = [cmap(mcolors.Normalize(vmin=COMPOSITION_PTS[0], vmax=COMPOSITION_PTS[-1])(c)) for c in comp_sweep]
-
-for comp, color in zip(comp_sweep, colors_comp):
-    q = {'r0': r0_mid}
-    if temp_mid is not None:
-        q['temperature_K'] = temp_mid
-    q['composition'] = comp
-    res = lut.forward(**q)
-    ax2.plot(wavenumber, res[QUANTITY], color=color, lw=0.8, alpha=0.6)
-
-ax2.set_xlim(WAVN_MAX, WAVN_MIN)
-ax2.set_ylim(bottom=0)
-ax2.set_ylabel(f'{QUANTITY}  (cm$^2$ g$^{{-1}}$)', fontsize=10)
-ax2.set_xlabel('Wavenumber (cm$^{-1}$)', fontsize=10)
-ax2.set_title(f'Sweep composition  ($r_0$={r0_mid:.2f} µm, T={temp_mid:.0f}K)' if temp_mid else
-              f'Sweep composition  ($r_0$={r0_mid:.2f} µm)', fontsize=10)
-_add_top_axis(ax2)
-
-# Add colorbar for composition
-sm_comp = mcm.ScalarMappable(cmap=cmap, norm=mcolors.Normalize(vmin=COMPOSITION_PTS[0], vmax=COMPOSITION_PTS[-1]))
-sm_comp.set_array([])
-cbar_comp = fig.colorbar(sm_comp, ax=ax2, pad=0.02, fraction=0.04)
-cbar_comp.set_label('Composition (wt%)', fontsize=9)
-
-# ===========================================================================
-# PLOT 3: Sweep temperature (if 3-D)
-# ===========================================================================
-
+# Panel 3: Sweep temperature (if 3-D)
 if not SWEEP_2D:
-    ax3 = axes_plot[2]
-    temp_sweep = np.linspace(temperature_pts[0], temperature_pts[-1], 30)
-    colors_temp = [cmap(mcolors.Normalize(vmin=temperature_pts[0], vmax=temperature_pts[-1])(t)) for t in temp_sweep]
+    plt.sca(axes_plot[2])
+    plot_lut_slice(
+        lut,
+        sweep_axis='temperature_K',
+        fixed_axes={'r0': r0_mid, 'composition': comp_mid},
+        quantity=QUANTITY,
+        n_points=50,
+        fig=fig,
+        show=False,
+    )
 
-    for temp, color in zip(temp_sweep, colors_temp):
-        q = {'r0': r0_mid, 'composition': comp_mid, 'temperature_K': temp}
-        res = lut.forward(**q)
-        ax3.plot(wavenumber, res[QUANTITY], color=color, lw=0.8, alpha=0.6)
-
-    ax3.set_xlim(WAVN_MAX, WAVN_MIN)
-    ax3.set_ylim(bottom=0)
-    ax3.set_ylabel(f'{QUANTITY}  (cm$^2$ g$^{{-1}}$)', fontsize=10)
-    ax3.set_xlabel('Wavenumber (cm$^{-1}$)', fontsize=10)
-    ax3.set_title(f'Sweep temperature  ($r_0$={r0_mid:.2f} µm, composition={comp_mid:.0f} wt%)', fontsize=10)
-    _add_top_axis(ax3)
-
-    # Add colorbar for temperature
-    sm_temp = mcm.ScalarMappable(cmap=cmap, norm=mcolors.Normalize(vmin=temperature_pts[0], vmax=temperature_pts[-1]))
-    sm_temp.set_array([])
-    cbar_temp = fig.colorbar(sm_temp, ax=ax3, pad=0.02, fraction=0.04)
-    cbar_temp.set_label('Temperature (K)', fontsize=9)
-
-# Title
+# Overall title
 fig.suptitle(
     f'{SUBSTANCE} ({SOURCE})  —  {lut_type}\n'
     f'{QUANTITY}  variability across sweep dimensions  '
-    f'({WAVN_MIN:.0f}–{WAVN_MAX:.0f} cm$^{{-1}}$)',
+    f'({wn_max:.0f}–{wn_min:.0f} cm$^{{-1}}$)',
     fontsize=11,
 )
 

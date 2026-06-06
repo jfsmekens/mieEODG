@@ -39,7 +39,7 @@ from .units import (
     r_cm_from_um, r_um_from_cm,
     wn_grid_from_um, wn_grid_from_nm,
 )
-from .plotting import plot_spectrum, plot_lut_sweep, plot_lut, plot_size_dist
+from .plotting import plot_spectrum, plot_lut_sweep, plot_lut, plot_lut_slice, plot_lut_heatmap, plot_size_dist, plot_phase_function, plot_phase_function_heatmap
 from .rfm import write_rfm_xsc
 from .constants import (
     DENSITY_WATER, DENSITY_ICE, DENSITY_ASH, DENSITY_DUST,
@@ -103,7 +103,11 @@ __all__ = [
     "plot_spectrum",
     "plot_lut_sweep",
     "plot_lut",
+    "plot_lut_slice",
+    "plot_lut_heatmap",
     "plot_size_dist",
+    "plot_phase_function",
+    "plot_phase_function_heatmap",
     # RFM export
     "write_rfm_xsc",
     # Constants

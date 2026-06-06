@@ -59,6 +59,19 @@ def setup_data():
 
 
 # ============================================================================
+# Helper functions
+# ============================================================================
+
+def _fortran_available() -> bool:
+    """Check if Fortran extension is available."""
+    try:
+        from mieEODG.fortran._mie_kernel_f90 import mie_batch  # noqa: F401
+        return True
+    except (ImportError, ModuleNotFoundError):
+        return False
+
+
+# ============================================================================
 # Tests
 # ============================================================================
 
@@ -168,16 +181,3 @@ class TestBackendPerformance:
         )
 
         print(f"\nFortran speedup: {speedup:.1f}x  (Python: {t_py:.2f}s, Fortran: {t_f90:.2f}s)")
-
-
-# ============================================================================
-# Helper functions
-# ============================================================================
-
-def _fortran_available() -> bool:
-    """Check if Fortran extension is available."""
-    try:
-        from mieEODG.fortran._mie_kernel_f90 import mie_batch  # noqa: F401
-        return True
-    except (ImportError, ModuleNotFoundError):
-        return False

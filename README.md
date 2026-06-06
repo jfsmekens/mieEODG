@@ -273,7 +273,7 @@ mieEODG/
 │   ├── mie_single.py       # mieSingle — single-particle Mie efficiencies
 │   ├── mie_size_dist.py    # mieSizeDist — size-integrated bulk properties
 │   ├── quadrature.py       # Gauss quadrature utilities
-│   ├── plotting.py         # plot_spectrum, plot_lut, plot_size_dist, _add_top_axis
+│   ├── plotting.py         # plot_spectrum, plot_lut, plot_lut_slice, plot_lut_heatmap, plot_phase_function, plot_phase_function_heatmap, plot_size_dist
 │   ├── units.py            # spectral unit conversions (wavenumber ↔ wavelength)
 │   ├── fortran/
 │   │   ├── mie_kernel.f90  # Fortran 90 Mie kernel source
