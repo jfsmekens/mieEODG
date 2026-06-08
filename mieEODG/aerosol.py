@@ -98,10 +98,16 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 @dataclass
-class _AerosolResult:
+class AerosolResult:
     """
-    Internal container for spectral Mie outputs from a single
+    Container for spectral Mie outputs from a single
     (refractive index, size distribution) combination.
+
+    Produced by :meth:`AerosolXSC.compute` (``xsc.result``), but also a
+    standalone public type: it can be constructed directly for custom or
+    single-particle computations (e.g. from :func:`~mieEODG.mieSingle`)
+    provided the standard relations between the fields are respected
+    (``Q = B / G_avg``, ``C = B / N_avg``, ``MEC = B_ext / (ρ · V_avg)``).
 
     All spectral arrays have shape ``(N_wavenumber,)``.
     """
@@ -112,12 +118,13 @@ class _AerosolResult:
     Q_sca: np.ndarray
     Q_abs: np.ndarray
 
-    # Volume-normalised cross-sections [cm²]
+    # Mean per-particle cross-sections [cm²] = B_* / N_avg (intensive)
     C_ext: np.ndarray
     C_sca: np.ndarray
     C_abs: np.ndarray
 
-    # Volume extinction / scattering / absorption coefficients [cm⁻¹], Nd=1
+    # Volume extinction / scattering / absorption coefficients [cm⁻¹]
+    # (scale with number density N_avg)
     B_ext: np.ndarray
     B_sca: np.ndarray
     B_abs: np.ndarray
@@ -145,6 +152,10 @@ class _AerosolResult:
     # shape (N_wn, n_legendre) — DISORT pmom convention:
     #   P(cosθ) = Σ_l (2l+1) · pmom[l] · P_l(cosθ),  pmom[0] = 1
     pmom: np.ndarray | None = None
+
+
+# Backwards-compatible private alias (pre-0.2.2 name).
+_AerosolResult = AerosolResult
 
 
 # ---------------------------------------------------------------------------
@@ -374,15 +385,19 @@ class AerosolXSC:
         V_avg = float(res.Vavg[0])
         N_avg = float(self.dist.N)
 
-        Q_ext = res.Bext / G_avg
-        Q_sca = res.Bsca / G_avg
-        Q_abs = Q_ext - Q_sca
-        C_ext = res.Bext
-        C_sca = res.Bsca
-        C_abs = C_ext - C_sca
+        # Volume coefficients [cm⁻¹] — scale with number density N_avg
         B_ext = res.Bext
         B_sca = res.Bsca
         B_abs = B_ext - B_sca
+        # Efficiency factors [dimensionless] = volume coeff / projected area
+        Q_ext = B_ext / G_avg
+        Q_sca = B_sca / G_avg
+        Q_abs = Q_ext - Q_sca
+        # Mean per-particle cross-sections [cm²] = volume coeff / N_avg
+        C_ext = B_ext / N_avg
+        C_sca = B_sca / N_avg
+        C_abs = C_ext - C_sca
+        # Mass coefficients [cm²/g]
         MEC   = B_ext / (self.density * V_avg)
         MSC   = B_sca / (self.density * V_avg)
         MAC   = MEC - MSC
@@ -469,12 +484,15 @@ class AerosolXSC:
                         if B_sca[j] > 0.0 else 0.0)
 
         B_abs = B_ext - B_sca
+        # Efficiency factors [dimensionless] = volume coeff / projected area
         Q_ext = B_ext / G_avg
         Q_sca = B_sca / G_avg
         Q_abs = Q_ext - Q_sca
-        C_ext = B_ext
-        C_sca = B_sca
-        C_abs = B_abs
+        # Mean per-particle cross-sections [cm²] = volume coeff / N_avg
+        C_ext = B_ext / N_avg
+        C_sca = B_sca / N_avg
+        C_abs = C_ext - C_sca
+        # Mass coefficients [cm²/g]
         MEC   = B_ext / (self.density * V_avg)
         MSC   = B_sca / (self.density * V_avg)
         MAC   = MEC - MSC
@@ -531,9 +549,54 @@ class AerosolXSC:
         return self._require_result('Q_abs').Q_abs
 
     @property
+    def C_ext(self) -> np.ndarray:
+        """Mean per-particle extinction cross-section [cm²]."""
+        return self._require_result('C_ext').C_ext
+
+    @property
+    def C_sca(self) -> np.ndarray:
+        """Mean per-particle scattering cross-section [cm²]."""
+        return self._require_result('C_sca').C_sca
+
+    @property
+    def C_abs(self) -> np.ndarray:
+        """Mean per-particle absorption cross-section [cm²]."""
+        return self._require_result('C_abs').C_abs
+
+    @property
+    def B_ext(self) -> np.ndarray:
+        """Volume extinction coefficient [cm⁻¹]."""
+        return self._require_result('B_ext').B_ext
+
+    @property
+    def B_sca(self) -> np.ndarray:
+        """Volume scattering coefficient [cm⁻¹]."""
+        return self._require_result('B_sca').B_sca
+
+    @property
+    def B_abs(self) -> np.ndarray:
+        """Volume absorption coefficient [cm⁻¹]."""
+        return self._require_result('B_abs').B_abs
+
+    @property
     def g(self) -> np.ndarray:
         """Asymmetry parameter."""
         return self._require_result('g').g
+
+    @property
+    def N_avg(self) -> float:
+        """Total number density [cm⁻³]."""
+        return self._require_result('N_avg').N_avg
+
+    @property
+    def V_avg(self) -> float:
+        """Mean particle volume integral [cm³·cm⁻³]."""
+        return self._require_result('V_avg').V_avg
+
+    @property
+    def G_avg(self) -> float:
+        """Mean projected-area integral [cm²·cm⁻³]."""
+        return self._require_result('G_avg').G_avg
 
     @property
     def phase_matrix(self) -> np.ndarray:

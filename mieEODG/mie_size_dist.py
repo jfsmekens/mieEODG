@@ -149,15 +149,23 @@ def _single_wavenumber(
 
     Ref: mie_size_dist.pro lines 120-184
     """
-    # Trapezoid quadrature on [Rl, Ru]
-    # Ref: mie_size_dist.pro lines 136-137
-    absc, wght = quadrature('T', n_pts)
-    R, W1 = shiftQuadrature(absc, wght, Rl, Ru)
+    if getattr(dist, 'dist_name', None) == 'monodisperse':
+        # Delta n(r) = N·δ(r − r₀): the size integral collapses to a single
+        # evaluation at r₀ with weight ∫ N·δ(r − r₀) dr = N.  No quadrature,
+        # no smearing — the result is the exact single-particle optics scaled
+        # by the number density N.
+        R   = np.array([dist.r0], dtype=np.float64)
+        W1P = np.array([dist.N],  dtype=np.float64)
+    else:
+        # Trapezoid quadrature on [Rl, Ru]
+        # Ref: mie_size_dist.pro lines 136-137
+        absc, wght = quadrature('T', n_pts)
+        R, W1 = shiftQuadrature(absc, wght, Rl, Ru)
 
-    # PDF weights at quadrature points via the distribution object
-    # Ref: mie_size_dist.pro lines 123-130
-    nR  = dist.pdf(R)
-    W1P = W1 * nR                        # quadrature weight × n(R)
+        # PDF weights at quadrature points via the distribution object
+        # Ref: mie_size_dist.pro lines 123-130
+        nR  = dist.pdf(R)
+        W1P = W1 * nR                    # quadrature weight × n(R)
 
     # Size parameters
     Dx    = 2.0 * np.pi * R * nu         # shape (n_pts,)

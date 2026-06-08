@@ -67,13 +67,14 @@ import hashlib
 import json
 import logging
 from pathlib import Path
+from typing import Callable
 
 import numpy as np
 from scipy.interpolate import PchipInterpolator
 
 from .aerosol import AerosolXSC
 from .refindex import ARIADatabase, RefrIndex
-from .size_dist import GaussianDist, LogNormalDist, SizeDistribution
+from .size_dist import _make_dist
 
 logger = logging.getLogger(__name__)
 
@@ -92,36 +93,6 @@ try:
     _HAS_XARRAY = True
 except ImportError:
     _HAS_XARRAY = False
-
-
-# ---------------------------------------------------------------------------
-# Helper: distribution factory for LUT sweeps
-# ---------------------------------------------------------------------------
-
-def _make_dist(
-    dist_type: str,
-    r0_cm: float,
-    s: float,
-) -> SizeDistribution:
-    """
-    Instantiate a size distribution for a single LUT grid point.
-
-    Parameters
-    ----------
-    dist_type : {'log_normal', 'gaussian'}
-    r0_cm : float
-        Median / mean radius [cm].
-    s : float
-        Spread parameter.  For log-normal: geometric std > 1.
-        For Gaussian: sigma = r0 * ln(s), giving comparable width.
-    """
-    if dist_type == 'log_normal':
-        return LogNormalDist(r0=r0_cm, s=s, n=1.0)
-    elif dist_type == 'gaussian':
-        sigma = r0_cm * np.log(s)   # matches lognormal spread near r0
-        return GaussianDist(r0=r0_cm, sigma=sigma, n=1.0)
-    else:
-        raise ValueError(f"Unsupported dist_type for LUT: {dist_type!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -425,6 +396,8 @@ class AerosolLUT:
         theta_pts: np.ndarray | None = None,
         n_legendre: int | None = None,
         cache_phase: bool = False,
+        density:   float | None = None,
+        progress_callback: 'Callable[[int, int], None] | None' = None,
     ) -> 'AerosolLUT':
         """
         Compute a LUT by running :class:`~mieEODG.AerosolXSC` on a r0 grid.
@@ -441,7 +414,7 @@ class AerosolLUT:
             Size distribution spread parameter.
         wn : np.ndarray
             Wavenumber grid [cm⁻¹].
-        dist_type : {'log_normal', 'gaussian'}
+        dist_type : {'log_normal', 'gaussian', 'monodisperse'}
             Size distribution type.  Default ``'log_normal'``.
         n_pts : int
             Number of Gauss quadrature points per size integration.
@@ -457,6 +430,11 @@ class AerosolLUT:
             If True and theta_pts or n_legendre is supplied, compute and
             store the phase matrix / Legendre coefficients for all r0 nodes
             in the returned LUT object. Default False (compute on demand).
+        progress_callback : callable or None
+            Optional ``callback(current_step, total_steps)`` invoked once per
+            r0 node (after it completes).  When supplied it takes priority
+            over the tqdm bar (``progress`` is ignored).  Intended for GUI
+            progress bars.
 
         Returns
         -------
@@ -485,12 +463,20 @@ class AerosolLUT:
             if n_legendre is not None:
                 pmom_all = np.empty((n_r0, n_wn, n_legendre))
 
+        # Progress reporting: a callback (e.g. a GUI bar) takes priority over
+        # the tqdm bar; otherwise honour the `progress` flag.
         label = f'LUT [{dist_type}]  {ri.substance or ri.category}'
-        it    = _tqdm(range(n_r0), desc=label, unit='r0') if progress else range(n_r0)
+        if progress_callback is not None:
+            it = range(n_r0)
+        elif progress:
+            it = _tqdm(range(n_r0), desc=label, unit='r0')
+        else:
+            it = range(n_r0)
 
         for i in it:
             dist = _make_dist(dist_type, r0_cm[i], s)
-            xsc  = AerosolXSC(ri=ri, dist=dist, wn=wn, n_pts=n_pts, backend=backend)
+            xsc  = AerosolXSC(ri=ri, dist=dist, wn=wn, n_pts=n_pts, backend=backend,
+                              density=density)
             xsc.compute(progress=False, theta_pts=theta_pts if cache_phase else None,
                        n_legendre=n_legendre if cache_phase else None)
             MEC_all[i] = xsc.result.MEC
@@ -502,6 +488,9 @@ class AerosolLUT:
                     phase_matrix_all[i] = xsc.result.phase_matrix
                 if n_legendre is not None and xsc.result.pmom is not None:
                     pmom_all[i] = xsc.result.pmom
+
+            if progress_callback is not None:
+                progress_callback(i + 1, n_r0)
 
         density = xsc.density  # same for all grid points
 
@@ -650,7 +639,19 @@ class AerosolLUT:
             )
         import xarray as xr
         path = Path(path)
-        ds   = xr.load_dataset(path)
+
+        # Pick the engine explicitly from the file's magic bytes.  This avoids
+        # xarray's multi-engine auto-probe, which emits noisy HDF5-DIAG output
+        # when, e.g., a netcdf4-only env meets a scipy/netCDF3 file (or v.v.).
+        with open(path, 'rb') as _fh:
+            magic = _fh.read(4)
+        if magic[:3] == b'CDF':
+            engine = 'scipy'             # classic netCDF3 (scipy backend)
+        elif magic == b'\x89HDF':
+            engine = 'netcdf4'           # HDF5-based netCDF4
+        else:
+            engine = None                # let xarray decide as a last resort
+        ds = xr.load_dataset(path, engine=engine)
 
         # Extract phase metadata
         cache_phase = bool(ds.attrs.get('cache_phase', False))
@@ -705,10 +706,21 @@ class AerosolLUT:
         theta_pts: np.ndarray | None = None,
         n_legendre: int | None = None,
         cache_phase: bool = False,
+        density:   float | None = None,
     ) -> str:
         """
         Compute a SHA-256 cache key from the parameters that uniquely define
         a LUT.  Backend is excluded — both backends produce identical results.
+
+        The grids (``r0_um``, ``wn``) and the refractive index are hashed by
+        their **full contents** — not just endpoints/length — so:
+
+        * a non-uniform or reordered grid cannot collide with a regular one
+          that happens to share its first/last/length;
+        * an in-place edit to a ``.ri`` file (or a regenerated synthetic RI
+          written to the same path) invalidates the cache correctly, since
+          ``ri.Cm`` (the actual n, k data) is folded into the key.
+
         Phase parameters are included so different phase configs create
         different cache entries.
 
@@ -717,29 +729,33 @@ class AerosolLUT:
         str
             64-character hex digest.
         """
+        def _arr_hash(a, dtype=np.float64):
+            return hashlib.md5(
+                np.ascontiguousarray(np.asarray(a, dtype=dtype)).tobytes()
+            ).hexdigest()
+
         r0_um = np.asarray(r0_um, dtype=np.float64)
         wn    = np.asarray(wn,    dtype=np.float64)
 
         # Hash theta_pts if present
         theta_pts_hash = None
         if theta_pts is not None and cache_phase:
-            theta_pts_arr = np.asarray(theta_pts, dtype=np.float64)
-            theta_pts_hash = hashlib.md5(theta_pts_arr.tobytes()).hexdigest()
+            theta_pts_hash = _arr_hash(theta_pts)
 
         payload = json.dumps({
-            'ri_path':   str(ri.filepath),
+            'ri_path':   str(ri.filepath),         # for traceability
+            'ri_hash':   _arr_hash(ri.Cm, dtype=np.complex128),  # actual n, k data
             'dist_type': dist_type,
             's':         float(s),
-            'r0_min':    float(r0_um[0]),
-            'r0_max':    float(r0_um[-1]),
+            'r0_hash':   _arr_hash(r0_um),         # full grid contents
             'n_r0':      int(len(r0_um)),
-            'wn_min':    float(wn[0]),
-            'wn_max':    float(wn[-1]),
+            'wn_hash':   _arr_hash(wn),            # full grid contents
             'n_wn':      int(len(wn)),
             'n_pts':     int(n_pts),
             'theta_pts_hash': theta_pts_hash,
             'n_legendre': int(n_legendre) if n_legendre is not None else None,
             'cache_phase': bool(cache_phase),
+            'density': float(density) if density is not None else None,
         }, sort_keys=True)
         return hashlib.sha256(payload.encode()).hexdigest()
 
@@ -757,8 +773,10 @@ class AerosolLUT:
         theta_pts: np.ndarray | None = None,
         n_legendre: int | None = None,
         cache_phase: bool = False,
+        density:   float | None = None,
         cache_dir: str | Path | None = None,
         recompute: bool = False,
+        progress_callback: Callable[[int, int], None] | None = None,
     ) -> 'AerosolLUT':
         """
         Return a LUT from the local cache if one exists for the given
@@ -779,7 +797,7 @@ class AerosolLUT:
             Size distribution spread parameter.
         wn : np.ndarray
             Wavenumber grid [cm⁻¹].
-        dist_type : {'log_normal', 'gaussian'}
+        dist_type : {'log_normal', 'gaussian', 'monodisperse'}
             Size distribution type.
         n_pts : int
             Quadrature points per size integration.
@@ -814,19 +832,29 @@ class AerosolLUT:
         cache_dir.mkdir(parents=True, exist_ok=True)
 
         key      = cls._cache_key(ri, r0_um, s, wn, dist_type, n_pts,
-                                   theta_pts, n_legendre, cache_phase)
+                                   theta_pts, n_legendre, cache_phase, density)
         nc_path  = cache_dir / f'{key}.nc'
         tag      = ri.substance or ri.category or 'unknown'
 
         if nc_path.exists() and not recompute:
-            logger.info("LUT cache hit  [%s]  ← %s", tag, nc_path.name)
-            lut = cls.load(nc_path)
-            # Refresh metadata from the live ri object in case the cache
-            # was written before a category/substance fix (not part of the
-            # hash — computation is unchanged).
-            lut.category  = ri.category
-            lut.substance = ri.substance or ""
-            return lut
+            try:
+                lut = cls.load(nc_path)
+                logger.info("LUT cache hit  [%s]  ← %s", tag, nc_path.name)
+                # Refresh metadata from the live ri object in case the cache
+                # was written before a category/substance fix (not part of the
+                # hash — computation is unchanged).
+                lut.category  = ri.category
+                lut.substance = ri.substance or ""
+                return lut
+            except Exception as exc:
+                # Corrupt / unreadable / cross-environment cache file — discard
+                # it and recompute rather than failing the whole call.
+                logger.warning("LUT cache unreadable [%s] (%s) — recomputing.",
+                               nc_path.name, exc)
+                try:
+                    nc_path.unlink()
+                except OSError:
+                    pass
 
         if nc_path.exists() and recompute:
             logger.info("LUT forced recompute [%s] — overwriting %s", tag, nc_path.name)
@@ -845,10 +873,69 @@ class AerosolLUT:
             theta_pts  = theta_pts,
             n_legendre = n_legendre,
             cache_phase = cache_phase,
+            density    = density,
+            progress_callback = progress_callback,
         )
         lut.save(nc_path)
         logger.info("LUT cached     [%s]  → %s", tag, nc_path.name)
         return lut
+
+    @classmethod
+    def cache_entries(cls, cache_dir: str | Path | None = None) -> list[dict]:
+        """
+        Return lightweight metadata for every LUT in the cache directory.
+
+        Reads only the NetCDF attributes and coordinate extents (not the full
+        data arrays or interpolators), so it is cheap enough to drive a GUI
+        chooser.  Each dict has: ``path``, ``substance``, ``category``,
+        ``dist_type``, ``s``, ``n_r0``, ``r0_min``, ``r0_max``, ``n_wn``,
+        ``wn_min``, ``wn_max``, ``phase`` (bool), ``size_kb``, ``mtime``.
+        Unreadable files yield a dict with ``error`` set.
+
+        Parameters
+        ----------
+        cache_dir : str, Path, or None
+            Defaults to the package cache directory.
+        """
+        cache_dir = Path(cache_dir) if cache_dir is not None else _DEFAULT_CACHE_DIR
+        if not cache_dir.exists():
+            return []
+        if not _HAS_XARRAY:
+            raise ImportError("Inspecting the LUT cache requires xarray.")
+        import xarray as xr
+
+        entries: list[dict] = []
+        for path in sorted(cache_dir.glob('*.nc')):
+            if path.name.startswith('ndlut_'):
+                continue   # N-D MultiDimLUT files are not 1-D AerosolLUTs
+            base = {'path': str(path),
+                    'size_kb': path.stat().st_size / 1024.0,
+                    'mtime': path.stat().st_mtime}
+            try:
+                with open(path, 'rb') as fh:
+                    magic = fh.read(4)
+                engine = ('scipy' if magic[:3] == b'CDF'
+                          else 'netcdf4' if magic == b'\x89HDF' else None)
+                with xr.open_dataset(path, engine=engine) as ds:
+                    r0 = np.asarray(ds['r0'].values)
+                    wn = np.asarray(ds['wavenumber'].values)
+                    entries.append({
+                        **base,
+                        'substance': ds.attrs.get('substance') or '',
+                        'category':  ds.attrs.get('category') or '',
+                        'dist_type': ds.attrs.get('dist_type', '?'),
+                        's':         float(ds.attrs.get('s', float('nan'))),
+                        'n_r0':      int(r0.size),
+                        'r0_min':    float(r0.min()),
+                        'r0_max':    float(r0.max()),
+                        'n_wn':      int(wn.size),
+                        'wn_min':    float(wn.min()),
+                        'wn_max':    float(wn.max()),
+                        'phase':     bool(int(ds.attrs.get('cache_phase', 0))),
+                    })
+            except Exception as exc:
+                entries.append({**base, 'error': str(exc)})
+        return entries
 
     @classmethod
     def list_cache(cls, cache_dir: str | Path | None = None) -> None:

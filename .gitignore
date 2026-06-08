@@ -41,6 +41,7 @@ mieEODG/cache/
 
 # Project memory (session context for Claude — not for version control)
 CLAUDE.md
+.claude/
 
 # macOS
 .DS_Store

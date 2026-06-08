@@ -27,11 +27,17 @@ RefrIndex           : Refractive index data container.
 readRI              : Read a single .ri file.
 """
 
+__version__ = "0.3.0"
+
 from .quadrature import quadrature, shiftQuadrature
-from .size_dist import LogNormalDist, ModifiedGammaDist, GaussianDist, createDist
+from .size_dist import (
+    LogNormalDist, ModifiedGammaDist, GaussianDist, MonodisperseDist,
+    TabulatedDist, createDist,
+)
+from .functions import savePDF, loadPDF
 from .refindex import ARIADatabase, RefrIndex, readRI, ash_refrindex, write_ri
 from .composition import BulkComposition, nbot_from_composition
-from .aerosol import AerosolXSC
+from .aerosol import AerosolXSC, AerosolResult
 from .lut import AerosolLUT
 from .units import (
     wn_from_um, wn_from_nm,
@@ -46,7 +52,7 @@ from .constants import (
     DENSITY_SEA_SALT, DENSITY_BLACK_CARBON, DENSITY_CALCITE, DENSITY_QUARTZ,
     DENSITY_TABLE, DISPLAY_NAMES,
     h2so4_density, hno3_density, ice_density, sio2_density, aria_density,
-    SUBSTANCE_DENSITY, ARIA_DEFAULTS,
+    SUBSTANCE_DENSITY, ARIA_DEFAULTS, SPECTRAL_RANGE_PRESETS,
     plot_cmaps, plot_colors, get_cmap, get_color,
 )
 
@@ -61,9 +67,17 @@ try:
 except ImportError:
     pass
 
+# GUI (optional, requires tkinter)
+try:
+    from .mie_viewer import MieViewer, launch
+except (ImportError, ModuleNotFoundError):
+    pass
+
 __all__ = [
+    "__version__",
     # Primary objects
     "AerosolXSC",
+    "AerosolResult",
     "AerosolLUT",
     # Low-level Mie routines
     "mieSingle",
@@ -80,7 +94,12 @@ __all__ = [
     # Size distributions
     "LogNormalDist",
     "ModifiedGammaDist",
+    "GaussianDist",
+    "MonodisperseDist",
+    "TabulatedDist",
     "createDist",
+    "savePDF",
+    "loadPDF",
     # Refractive index
     "ARIADatabase",
     "RefrIndex",
@@ -110,6 +129,9 @@ __all__ = [
     "plot_phase_function_heatmap",
     # RFM export
     "write_rfm_xsc",
+    # GUI
+    "MieViewer",
+    "launch",
     # Constants
     "DENSITY_WATER",
     "DENSITY_ICE",

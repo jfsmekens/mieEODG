@@ -14,8 +14,10 @@ precomputed look-up table (LUT) system for fast retrieval use.
 
 - **Mie kernel** — Python/NumPy and compiled Fortran backends (40× faster);
   automatic build via custom PEP 517 backend for all Python versions
-- **Size distributions** — LogNormal, ModifiedGamma, Gaussian with easy µm-to-cm
-  conversion via `from_um()` constructor
+- **Size distributions** — LogNormal, ModifiedGamma, Gaussian, Monodisperse
+  (exact single particle), and Tabulated (measured/custom PDFs) with easy
+  µm-to-cm conversion via `from_um()` constructors; `savePDF()` / `loadPDF()`
+  for CSV round-tripping of a distribution
 - **ARIA refractive index database** — bundled 450+ `.ri` files covering volcanic
   ash, sulphuric acid, nitric acid, liquid water, ice, mineral dust, sea salt,
   metals, minerals, and more
@@ -32,7 +34,9 @@ precomputed look-up table (LUT) system for fast retrieval use.
   hash of inputs; optional phase function caching for fast DISORT queries
 - **N-dimensional LUTs** — `MultiDimLUT` for sweeps across radius, composition,
   and temperature with single-source consistency enforcement and automatic ARIA
-  database integration via fuzzy matching
+  database integration via fuzzy matching; stores all 13 optical quantities
+  (Q/C/B ext·sca·abs, MEC/MSC/MAC, g) per grid point and interpolates via a
+  cached vector-valued `RegularGridInterpolator`
 - **Phase function** — size-integrated scattering phase matrix [F11, F33, F12,
   F34] at user-supplied angles, plus Legendre expansion coefficients (`pmom`)
   in DISORT convention; LRU in-memory cache with optional disk storage
@@ -41,6 +45,10 @@ precomputed look-up table (LUT) system for fast retrieval use.
   pre-scaled cm²/molec); supports multi-tabulation from N-D LUTs
 - **Scientific colormaps** — per-ARIA-category colormaps via
   [cmcrameri](https://www.fabiocrameri.ch/colourmaps/)
+- **Graphical interface** — `MieViewer`, a Tkinter desktop GUI to browse the
+  ARIA database, compute single-particle and phase-function results, and build
+  and query 1-D / N-D LUTs interactively (launched with the `mie-viewer`
+  console script)
 
 ---
 
@@ -53,9 +61,10 @@ precomputed look-up table (LUT) system for fast retrieval use.
 | SciPy | any recent | |
 | xarray | optional | required for LUT save/load |
 | tqdm | optional | progress bars |
-| matplotlib | optional | demo scripts |
+| matplotlib | optional | demo scripts, plotting, GUI |
 | cmcrameri | optional | scientific colormaps |
 | netCDF4 | optional | compressed LUT files (recommended) |
+| tkinter | optional | `MieViewer` GUI (bundled with most Python builds) |
 
 ---
 
@@ -172,6 +181,30 @@ AerosolLUT.list_cache()
 
 ---
 
+## Graphical interface (MieViewer)
+
+`MieViewer` is an optional Tkinter desktop GUI for interactive exploration —
+no scripting required. It lets you browse the ARIA database, load refractive
+indices, compute single-particle and phase-function results, and build and
+query 1-D and N-D LUTs, all with live plots, a progress bar, and a log console.
+
+Launch it via the console script installed with the package:
+
+```bash
+mie-viewer
+```
+
+or from Python:
+
+```python
+from mieEODG import launch
+launch()
+```
+
+The GUI requires `tkinter` (bundled with most Python builds) and `matplotlib`.
+
+---
+
 ## ARIA database
 
 The bundled ARIA (Aerosol Refractive Index Archive) database contains
@@ -216,10 +249,13 @@ lut = AerosolLUT.load_or_compute(ri, r0_um=r0_grid, s=1.5, wn=wn,
 
 ## LUT caching
 
-LUTs are cached to `~/.mieEODG/lut_cache/` by default.  The cache key is a
-SHA-256 hash of the defining parameters (RI source path, distribution type,
-s, r0 grid, wavenumber grid, n_pts).  Any change in inputs automatically
-produces a new cache entry; stale entries are never silently reused.
+LUTs are cached to the package folder `mieEODG/cache/lut/` by default (falling
+back to `~/.mieEODG/lut_cache/` if the package folder is not writable).  The
+cache key is a SHA-256 hash of the defining parameters (RI source path and
+n,k data, distribution type, s, r0 grid, wavenumber grid, n_pts, density, and
+phase settings).  Any change in inputs automatically produces a new cache
+entry; stale entries are never silently reused.  N-D `MultiDimLUT` caches are
+stored alongside as `ndlut_<hash>.nc`.
 
 ```python
 # Force a recompute (overwrite the cached file)
@@ -268,8 +304,10 @@ mieEODG/
 │   ├── lut_multi.py        # MultiDimLUT — N-D LUT with ARIA integration
 │   ├── refindex.py         # ARIADatabase, RefrIndex, volcanic ash parameterization
 │   ├── rfm.py              # RFM .xsc export (HITRAN format)
-│   ├── size_dist.py        # LogNormalDist, ModifiedGammaDist, GaussianDist
-│   ├── constants.py        # densities, colormaps, ARIA_DEFAULTS
+│   ├── size_dist.py        # LogNormalDist, ModifiedGammaDist, GaussianDist, MonodisperseDist, TabulatedDist
+│   ├── functions.py        # savePDF / loadPDF — CSV round-trip for size distributions
+│   ├── mie_viewer.py       # MieViewer — Tkinter GUI (mie-viewer console script)
+│   ├── constants.py        # densities, colormaps, ARIA_DEFAULTS, SPECTRAL_RANGE_PRESETS
 │   ├── mie_single.py       # mieSingle — single-particle Mie efficiencies
 │   ├── mie_size_dist.py    # mieSizeDist — size-integrated bulk properties
 │   ├── quadrature.py       # Gauss quadrature utilities

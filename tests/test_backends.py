@@ -80,9 +80,12 @@ class TestBackendAvailability:
 
     def test_python_backend_available(self, setup_data):
         """Python backend should always be available."""
-        ri = setup_data['ri']
+        # Small wn grid for a fast smoke test; re-sample the RI onto it so the
+        # refractive index and wavenumber arrays stay length-consistent (the
+        # fixture RI is on the full grid — slicing only wn would mismatch).
+        wn = setup_data['wavenumber'][:10]
+        ri = ARIADatabase().read(ARIA_PATH, wavenumber=wn, out_of_range='clip')
         dist = LogNormalDist.from_um(1.0, 1.5, n=1.0)
-        wn = setup_data['wavenumber'][:10]  # Small test
 
         xsc = AerosolXSC(ri=ri, dist=dist, wn=wn, backend='python')
         xsc.compute(progress=False)
@@ -95,9 +98,9 @@ class TestBackendAvailability:
     )
     def test_fortran_backend_available(self, setup_data):
         """Fortran backend should be available if built."""
-        ri = setup_data['ri']
+        wn = setup_data['wavenumber'][:10]
+        ri = ARIADatabase().read(ARIA_PATH, wavenumber=wn, out_of_range='clip')
         dist = LogNormalDist.from_um(1.0, 1.5, n=1.0)
-        wn = setup_data['wavenumber'][:10]  # Small test
 
         xsc = AerosolXSC(ri=ri, dist=dist, wn=wn, backend='fortran')
         xsc.compute(progress=False)

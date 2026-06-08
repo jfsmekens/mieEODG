@@ -167,9 +167,20 @@ _R_TICKS_UM: list[float] = [
 _R_TICKS_MAX: int = 10
 
 _QUANTITY_LABELS: dict[str, str] = {
+    # Mass coefficients [cm²/g]
     'MEC': r'MEC  (cm$^2$ g$^{-1}$)',
     'MSC': r'MSC  (cm$^2$ g$^{-1}$)',
     'MAC': r'MAC  (cm$^2$ g$^{-1}$)',
+    # Efficiency factors [dimensionless]
+    'Q_ext': r'$Q_{ext}$', 'Q_sca': r'$Q_{sca}$', 'Q_abs': r'$Q_{abs}$',
+    # Mean per-particle cross-sections [cm²]
+    'C_ext': r'$C_{ext}$  (cm$^2$)', 'C_sca': r'$C_{sca}$  (cm$^2$)',
+    'C_abs': r'$C_{abs}$  (cm$^2$)',
+    # Volume coefficients [cm⁻¹]  (LUT built at Nd=1; scale by your Nd)
+    'B_ext': r'$B_{ext}$  (cm$^{-1}$)', 'B_sca': r'$B_{sca}$  (cm$^{-1}$)',
+    'B_abs': r'$B_{abs}$  (cm$^{-1}$)',
+    # Asymmetry parameter [dimensionless]
+    'g': r'$g$',
 }
 _VALID_QUANTITIES = frozenset(_QUANTITY_LABELS)
 
@@ -525,7 +536,9 @@ def plot_size_dist(
     category:    str | None = None,
     labels:      list[str] | None = None,
     yscale:      str = 'linear',
+    xscale:      str = 'log',
     style:       str = 'line',
+    color:       str | None = None,
     title:       str | None = None,
     fig:         plt.Figure | None = None,
     show:        bool = True,
@@ -609,7 +622,14 @@ def plot_size_dist(
     if r_range_um is not None:
         r_lo, r_hi = float(r_range_um[0]), float(r_range_um[1])
     else:
-        bounds_cm = [d.bounds() for _, d in items]
+        # For monodisperse (delta) dists, bounds() is a tight ±1 % bracket;
+        # widen to a half-decade window so the stem sits mid-axis.
+        bounds_cm = []
+        for _, d in items:
+            if getattr(d, 'dist_name', None) == 'monodisperse':
+                bounds_cm.append((d.r0 * 0.3, d.r0 * 3.0))
+            else:
+                bounds_cm.append(d.bounds())
         r_lo = min(b[0] for b in bounds_cm) * 1e4    # cm → µm
         r_hi = max(b[1] for b in bounds_cm) * 1e4
         # 20 % log-space padding
@@ -621,9 +641,15 @@ def plot_size_dist(
     r_cm = r_um * 1e-4
 
     # --- Color scheme ---
-    # Use category colormap keyed by r0_um if all dists expose that attribute
+    # An explicit `color` overrides everything (all curves drawn in it).
+    # Otherwise: category colormap keyed by r0_um for multi-curve sweeps, else
+    # the default property cycle.
     has_r0 = all(hasattr(d, 'r0_um') for _, d in items)
-    if has_r0 and n_dists > 1:
+    if color is not None:
+        colors  = [color] * n_dists
+        norm_r0 = None
+        cmap    = None
+    elif has_r0 and n_dists > 1:
         r0_vals = np.array([d.r0_um for _, d in items])
         norm_r0 = mcolors.LogNorm(vmin=r0_vals.min(), vmax=r0_vals.max())
         cmap    = get_cmap(category or '')
@@ -647,6 +673,13 @@ def plot_size_dist(
         ax = fig.gca()
 
     for i, (label, dist) in enumerate(items):
+        # Monodisperse (delta): draw a vertical stem at r₀ rather than a curve.
+        if getattr(dist, 'dist_name', None) == 'monodisperse':
+            height = 1.0 if normalize else dist.N
+            ax.vlines(dist.r0_um, 0.0, height, color=colors[i], lw=1.5, label=label)
+            ax.plot(dist.r0_um, height, 'o', color=colors[i], ms=5)
+            continue
+
         n_r    = dist.pdf(r_cm)          # n(r) in cm-based units
         dndlnr = n_r * r_cm              # dN/d ln r = r · n(r)
         if normalize:
@@ -664,20 +697,21 @@ def plot_size_dist(
             ax.bar(r_um, dndlnr, width=np.diff(r_um).mean() * 0.8,
                    color=colors[i], label=label, alpha=0.7, edgecolor='none')
 
-    ax.set_xscale('log')
+    ax.set_xscale(xscale)
     ax.set_yscale(yscale)
     ax.set_xlim(r_lo, r_hi)
     if normalize and yscale == 'linear':
         ax.set_ylim(bottom=0, top=1.05)
 
-    # Curated x-axis ticks from candidate list
-    visible_ticks = [t for t in _R_TICKS_UM if r_lo <= t <= r_hi]
-    if len(visible_ticks) > _R_TICKS_MAX:
-        step = (len(visible_ticks) + _R_TICKS_MAX - 1) // _R_TICKS_MAX
-        visible_ticks = visible_ticks[::step]
-    if visible_ticks:
-        ax.xaxis.set_ticks(visible_ticks)
-        ax.xaxis.set_ticklabels([f'{t:g}' for t in visible_ticks])
+    # Curated log-spaced x-axis ticks (only meaningful on a log x-axis).
+    if xscale == 'log':
+        visible_ticks = [t for t in _R_TICKS_UM if r_lo <= t <= r_hi]
+        if len(visible_ticks) > _R_TICKS_MAX:
+            step = (len(visible_ticks) + _R_TICKS_MAX - 1) // _R_TICKS_MAX
+            visible_ticks = visible_ticks[::step]
+        if visible_ticks:
+            ax.xaxis.set_ticks(visible_ticks)
+            ax.xaxis.set_ticklabels([f'{t:g}' for t in visible_ticks])
 
     ax.set_xlabel('Radius (µm)', fontsize=9)
     y_label = 'dN / d ln r' + (' (normalised)' if normalize else '')
@@ -1100,6 +1134,7 @@ def plot_lut_heatmap(
     y_axis: str = 'radius',
     fixed_axes: dict | None = None,
     quantity: str = 'MEC',
+    wavelength_um: float | None = None,
     n_points_x: int = 100,
     n_points_y: int = 50,
     cmap: str | None = None,
@@ -1206,11 +1241,10 @@ def plot_lut_heatmap(
         axis_vals['radius'] = lut.r0_um
         axis_vals['wavelength'] = wl_um
     else:  # multidim
+        axis_vals['wavelength'] = wl_um   # spectral dim is always available
         for axis in lut.axes:
             if axis.name == 'r0':
                 axis_vals['radius'] = axis.values
-            elif axis.name == 'wavelength':
-                axis_vals['wavelength'] = axis.values
             else:
                 axis_vals[axis.name] = axis.values
 
@@ -1264,13 +1298,36 @@ def plot_lut_heatmap(
                     wl_idx = 0
                 Z[i, j] = result[quantity][wl_idx]
     else:
-        # For N-D LUT: forward() takes keyword arguments
+        # For N-D LUT: forward() takes keyword arguments and returns the full
+        # spectrum, so we must (a) translate the display axis name 'radius'→'r0',
+        # (b) when an axis IS wavelength, pick that spectral index, and (c) when
+        # NEITHER axis is wavelength, evaluate at a fixed wavelength.
+        def _qname(disp_axis):
+            return 'r0' if disp_axis == 'radius' else disp_axis
+
+        # Fixed-wavelength index for the no-wavelength-axis case.
+        if wavelength_um is not None:
+            fixed_wl_idx = int(np.argmin(np.abs(wl_um - wavelength_um)))
+        else:
+            fixed_wl_idx = len(wl_um) // 2   # middle of the band by default
+
+        # Translate any 'radius' key in fixed_axes to 'r0'.
+        fixed_q = {_qname(k): v for k, v in fixed_axes.items()}
+
         for i in range(n_points_y):
             for j in range(n_points_x):
-                query = {x_axis: X[i, j], y_axis: Y[i, j]}
-                query.update(fixed_axes)
-                result = lut.forward(**query)
-                Z[i, j] = result[quantity]
+                query = dict(fixed_q)
+                wl_idx = None
+                if x_axis == 'wavelength':
+                    wl_idx = int(np.argmin(np.abs(wl_um - X[i, j])))
+                else:
+                    query[_qname(x_axis)] = X[i, j]
+                if y_axis == 'wavelength':
+                    wl_idx = int(np.argmin(np.abs(wl_um - Y[i, j])))
+                else:
+                    query[_qname(y_axis)] = Y[i, j]
+                spectrum = lut.forward(**query)[quantity]   # (n_wn,)
+                Z[i, j] = spectrum[wl_idx if wl_idx is not None else fixed_wl_idx]
 
     # Create figure
     if fig is None:
@@ -1310,7 +1367,7 @@ def plot_lut_heatmap(
 
     # Colorbar
     cbar = fig.colorbar(im, ax=ax, pad=0.02)
-    cbar.set_label(f'{quantity} (cm$^2$ g$^{{-1}}$)', fontsize=10)
+    cbar.set_label(_QUANTITY_LABELS.get(quantity, quantity), fontsize=10)
 
     # Contours (optional)
     if contours:
@@ -1327,7 +1384,11 @@ def plot_lut_heatmap(
         title = f'{substance} – {quantity}({x_axis}, {y_axis})'
     ax.set_title(title, fontsize=12, fontweight='bold')
 
-    fig.subplots_adjust(bottom=0.12, left=0.12, right=0.92)
+    # The colorbar installs a layout engine; subplots_adjust would conflict
+    # with it (emitting a UserWarning).  Only apply manual spacing when no
+    # layout engine is active.
+    if fig.get_layout_engine() is None:
+        fig.subplots_adjust(bottom=0.12, left=0.12, right=0.92)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')
@@ -1501,7 +1562,11 @@ def plot_phase_function_heatmap(
         title = f'{substance} – Phase Function {quantity}(θ, λ)'
     ax.set_title(title, fontsize=12, fontweight='bold')
 
-    fig.subplots_adjust(bottom=0.12, left=0.12, right=0.92)
+    # The colorbar installs a layout engine; subplots_adjust would conflict
+    # with it (emitting a UserWarning).  Only apply manual spacing when no
+    # layout engine is active.
+    if fig.get_layout_engine() is None:
+        fig.subplots_adjust(bottom=0.12, left=0.12, right=0.92)
 
     if save_path is not None:
         fig.savefig(save_path, dpi=150, bbox_inches='tight')

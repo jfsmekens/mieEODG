@@ -79,6 +79,7 @@ Notes
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
@@ -89,7 +90,22 @@ from typing import Callable
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 
+from .size_dist import _make_dist
+
 logger = logging.getLogger(__name__)
+
+#: Spectral quantities a MultiDimLUT can store — the full set exposed by
+#: :class:`~mieEODG.AerosolResult` (mirrors AerosolXSC).  All are attribute
+#: names on ``xsc.result``.  NOTE: the LUT builds each node at number density
+#: Nd=1, so B_* ≡ C_* numerically (B = Nd·C); both are kept for a faithful
+#: mirror — scale B by your Nd at use time.
+LUT_QUANTITIES = (
+    'Q_ext', 'Q_sca', 'Q_abs',
+    'C_ext', 'C_sca', 'C_abs',
+    'B_ext', 'B_sca', 'B_abs',
+    'MEC', 'MSC', 'MAC',
+    'g',
+)
 
 # Load metadata registry at module level
 _REGISTRY_PATH = Path(__file__).parent / 'data' / 'aria_metadata_registry.json'
@@ -103,6 +119,43 @@ except FileNotFoundError as e:
     ) from e
 
 logger.info(f"Loaded ARIA metadata registry ({_ARIA_METADATA['database_info']['total_files']} files)")
+
+
+# ---------------------------------------------------------------------------
+# Registry introspection helpers (drive GUI / programmatic N-D LUT building)
+# ---------------------------------------------------------------------------
+
+def registry_substances() -> list[str]:
+    """Substances available for N-D LUTs (keys of the canonical-source registry)."""
+    return list(_ARIA_METADATA['canonical_sources'].keys())
+
+
+def registry_sources(substance: str) -> list[str]:
+    """Valid sources for a substance: preferred first, then any alternatives."""
+    meta = _ARIA_METADATA['canonical_sources'].get(substance, {})
+    preferred = meta.get('preferred_source')
+    alternatives = meta.get('alternatives') or []
+    if not isinstance(alternatives, list):
+        alternatives = []
+    return ([preferred] if preferred else []) + list(alternatives)
+
+
+def registry_axes(substance: str) -> dict[str, dict]:
+    """Swept axes for a substance → {axis_name: {'points': [...], 'units': str}}.
+
+    Maps registry fields ('composition_points'/'temperature_points' + units) to
+    the axis names used by :class:`LUTAxis` ('composition', 'temperature_K').
+    """
+    meta = _ARIA_METADATA['canonical_sources'].get(substance, {})
+    field = {'composition': ('composition_points', 'composition_units'),
+             'temperature_K': ('temperature_points', 'temperature_units')}
+    out: dict[str, dict] = {}
+    for name in meta.get('sweep_axes', []):
+        pts_key, unit_key = field.get(name, (None, None))
+        if pts_key and meta.get(pts_key):
+            out[name] = {'points': list(meta[pts_key]),
+                         'units': meta.get(unit_key, '')}
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -332,7 +385,10 @@ class MultiDimLUT:
         axes: list[LUTAxis],
         ri_constraint: RIConstraint,
         wavenumber: np.ndarray,
-        quantity: str = 'MEC',
+        quantity: str | None = None,
+        dist_type: str = 'log_normal',
+        s: float = 1.5,
+        quantities: 'list[str] | None' = None,
     ):
         """
         Initialize a multi-dimensional LUT.
@@ -364,14 +420,32 @@ class MultiDimLUT:
             if not isinstance(ax, LUTAxis):
                 raise TypeError(f"axes[{i}] must be LUTAxis, got {type(ax)}")
 
-        # Validate quantity
-        if quantity not in ('MEC', 'MSC', 'MAC'):
-            raise ValueError(f"quantity must be 'MEC', 'MSC', or 'MAC', got {quantity!r}")
+        # Resolve which spectral quantities to store.
+        #   quantities=[...]  → exactly those
+        #   quantity='MEC'    → just that one (back-compat)
+        #   neither           → the full AerosolResult set (mirror AerosolXSC)
+        if quantities is not None:
+            resolved = list(quantities)
+        elif quantity is not None:
+            resolved = [quantity]
+        else:
+            resolved = list(LUT_QUANTITIES)
+        for q in resolved:
+            if q not in LUT_QUANTITIES:
+                raise ValueError(
+                    f"Unknown quantity {q!r}; must be one of {LUT_QUANTITIES}")
+        if dist_type not in ('log_normal', 'gaussian', 'monodisperse'):
+            raise ValueError(
+                f"dist_type must be 'log_normal', 'gaussian', or 'monodisperse', "
+                f"got {dist_type!r}")
 
         self.axes = axes
         self.ri_constraint = ri_constraint
         self.wavenumber = np.asarray(wavenumber, dtype=np.float64)
-        self.quantity = quantity
+        self.quantities = tuple(resolved)
+        self.quantity = self.quantities[0]   # primary / default-display quantity
+        self.dist_type = dist_type
+        self.s = float(s)
 
         # Shape of data array: (n_ax0, n_ax1, ..., n_wn)
         self.shape = tuple(len(ax.values) for ax in axes) + (len(self.wavenumber),)
@@ -426,7 +500,10 @@ class MultiDimLUT:
         source: str,
         axes: list[LUTAxis],
         wavenumber: np.ndarray,
-        quantity: str = 'MEC',
+        quantity: str | None = None,
+        dist_type: str = 'log_normal',
+        s: float = 1.5,
+        quantities: 'list[str] | None' = None,
     ) -> MultiDimLUT:
         """
         Construct a MultiDimLUT by loading metadata and constraints from ARIA database.
@@ -482,7 +559,8 @@ class MultiDimLUT:
         )
 
         # Create LUT instance
-        lut = cls(axes, ri_constraint, wavenumber, quantity)
+        lut = cls(axes, ri_constraint, wavenumber, quantity, dist_type, s,
+                  quantities=quantities)
 
         # Validate that all sweep axes are available
         lut._validate_constraint()
@@ -492,6 +570,97 @@ class MultiDimLUT:
             f"{len(axes)} axes, shape {lut.shape}"
         )
 
+        return lut
+
+    @staticmethod
+    def _cache_key(
+        substance: str,
+        source: str,
+        axes: list[LUTAxis],
+        wavenumber: np.ndarray,
+        dist_type: str,
+        s: float,
+        quantities: 'list[str] | None',
+    ) -> str:
+        """SHA-256 over the parameters that uniquely define an N-D LUT.
+
+        Hashes the full axis grids + wavenumber grid (by contents), the
+        substance/source, the distribution (dist_type, s), and the stored
+        quantity set.  RI *contents* are not hashed (the substance+source+axis
+        grid already pin which ARIA files are loaded).
+        """
+        def _h(a):
+            return hashlib.md5(
+                np.ascontiguousarray(np.asarray(a, dtype=np.float64)).tobytes()
+            ).hexdigest()
+
+        qs = sorted(quantities) if quantities else list(LUT_QUANTITIES)
+        payload = json.dumps({
+            'substance': substance,
+            'source':    source,
+            'dist_type': dist_type,
+            's':         float(s),
+            'wn_hash':   _h(wavenumber),
+            'n_wn':      int(len(wavenumber)),
+            'axes':      [(ax.name, _h(ax.values), int(len(ax.values))) for ax in axes],
+            'quantities': qs,
+        }, sort_keys=True)
+        return hashlib.sha256(payload.encode()).hexdigest()
+
+    @classmethod
+    def load_or_compute(
+        cls,
+        substance: str,
+        source: str,
+        axes: list[LUTAxis],
+        wavenumber: np.ndarray,
+        *,
+        dist_type: str = 'log_normal',
+        s: float = 1.5,
+        quantities: 'list[str] | None' = None,
+        backend: str = 'python',
+        cache_dir: 'str | Path | None' = None,
+        recompute: bool = False,
+        progress: bool = False,
+        progress_callback: 'Callable[[int, int], None] | None' = None,
+    ) -> 'MultiDimLUT':
+        """Return a cached N-D LUT if one exists for these params, else build it.
+
+        Content-addressed: the cache filename is ``ndlut_<sha256>.nc`` (same
+        scheme as :class:`~mieEODG.AerosolLUT`), so changing any grid, the
+        distribution, source, or quantity set triggers a fresh build rather than
+        silently overwriting/reusing a mismatched LUT.
+        """
+        from .lut import _DEFAULT_CACHE_DIR
+        cache_dir = Path(cache_dir) if cache_dir is not None else _DEFAULT_CACHE_DIR
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        key = cls._cache_key(substance, source, axes, wavenumber, dist_type, s, quantities)
+        nc_path = cache_dir / f'ndlut_{key}.nc'
+        tag = f'{substance} ({source})'
+
+        if nc_path.exists() and not recompute:
+            try:
+                lut = cls.load(nc_path)
+                logger.info("N-D LUT cache hit  [%s] ← %s", tag, nc_path.name)
+                return lut
+            except Exception as exc:
+                logger.warning("N-D LUT cache unreadable [%s] (%s) — recomputing.",
+                               nc_path.name, exc)
+                try:
+                    nc_path.unlink()
+                except OSError:
+                    pass
+
+        lut = cls.from_aria_database(substance, source, axes, wavenumber,
+                                     dist_type=dist_type, s=s, quantities=quantities)
+        lut.compute(progress=progress, backend=backend,
+                    progress_callback=progress_callback)
+        try:
+            lut.save(nc_path)
+            logger.info("N-D LUT cached     [%s] → %s", tag, nc_path.name)
+        except Exception as exc:
+            logger.warning("Could not cache N-D LUT [%s]: %s", tag, exc)
         return lut
 
     def compute(
@@ -504,7 +673,10 @@ class MultiDimLUT:
         Compute optical properties for all grid points.
 
         Loads RI files from ARIA database for each grid point on the sweep axes,
-        computes optical properties (MEC, MSC, MAC), and populates ``self.data``.
+        computes the optical properties for every quantity in ``self.quantities``
+        (a subset of ``LUT_QUANTITIES`` — by default all 13: Q/C/B ext/sca/abs,
+        MEC/MSC/MAC, g), and populates ``self.data`` (a ``{quantity: ndarray}``
+        dict).
 
         Parameters
         ----------
@@ -527,7 +699,6 @@ class MultiDimLUT:
         """
         from .refindex import ARIADatabase
         from .aerosol import AerosolXSC
-        from .size_dist import LogNormalDist
 
         try:
             from tqdm import tqdm
@@ -537,8 +708,9 @@ class MultiDimLUT:
         # Validate constraint before computing
         self._validate_constraint()
 
-        # Initialize data array
-        self.data = np.zeros(self.shape, dtype=np.float64)
+        # Initialize one data array per stored quantity.
+        self.data = {q: np.full(self.shape, np.nan, dtype=np.float64)
+                     for q in self.quantities}
 
         db = ARIADatabase()
 
@@ -577,24 +749,21 @@ class MultiDimLUT:
                     ri = self._load_ri_for_point(db, grid_values)
                 except FileNotFoundError as e:
                     logger.error(f"Failed to load RI for {grid_values}: {e}")
-                    # Skip this grid point or use a sentinel value?
-                    # For now, fill with NaN
-                    self.data[idx] = np.nan
+                    # leave NaN (arrays initialised to NaN) for this grid point
                     continue
 
                 # Create size distribution with r0 from grid
                 r0_um = grid_values.get('r0', None)
                 if r0_um is None:
                     # r0 is not in sweep_axes, should be fixed_for_ri_load=True
-                    # This shouldn't happen in Phase 2 (r0 is always fixed)
                     logger.warning("r0 not found in grid point")
-                    self.data[idx] = np.nan
                     continue
 
-                # Use default size distribution (LogNormal with s=1.5)
-                dist = LogNormalDist(r0=r0_um * 1e-4, s=1.5, n=1.0)  # r0 in cm
+                # Size distribution at this r₀ (configurable family + spread).
+                dist = _make_dist(self.dist_type, r0_um * 1e-4, self.s)  # r0 in cm
 
-                # Compute optical properties
+                # Compute optical properties — one AerosolXSC produces the full
+                # AerosolResult, so we extract every stored quantity for free.
                 try:
                     xsc = AerosolXSC(
                         ri=ri,
@@ -603,28 +772,18 @@ class MultiDimLUT:
                         backend=backend,
                     )
                     xsc.compute(progress=False)
-
-                    # Extract the requested quantity
-                    if self.quantity == 'MEC':
-                        quantity_values = xsc.result.MEC
-                    elif self.quantity == 'MSC':
-                        quantity_values = xsc.result.MSC
-                    elif self.quantity == 'MAC':
-                        quantity_values = xsc.result.MAC
-                    else:
-                        raise ValueError(f"Unknown quantity: {self.quantity}")
-
-                    # Store in data array
-                    self.data[idx] = quantity_values
+                    for q in self.quantities:
+                        self.data[q][idx] = getattr(xsc.result, q)
 
                 except Exception as e:
                     logger.error(f"Failed to compute XSC for {grid_values}: {e}")
-                    self.data[idx] = np.nan
+                    # leave NaN for this grid point across all quantities
 
         finally:
             if pbar is not None:
                 pbar.close()
 
+        self.interpolators = {}   # invalidate any cached interpolator
         logger.info(f"LUT computation complete: {self.quantity} array shape {self.shape}")
 
     def forward(self, **kwargs) -> dict[str, np.ndarray]:
@@ -660,53 +819,43 @@ class MultiDimLUT:
         if self.data is None:
             raise RuntimeError("Cannot call forward() before compute()")
 
-        # Build interpolator if not already done
+        # Build the (cached) interpolators once.
         if not self.interpolators:
             self._build_interpolator()
 
-        # Extract query point from kwargs
+        # Extract query point from kwargs (one value per sweep axis).
         query_point = []
         for ax in self.axes:
             if ax.name not in kwargs:
                 raise ValueError(f"Missing required axis: {ax.name!r}")
             query_point.append(kwargs[ax.name])
+        query_point = np.array([query_point])   # (1, n_axes)
 
-        query_point = np.array([query_point])  # RegularGridInterpolator expects (1, n_axes)
-
-        # Interpolate for each wavenumber
-        # RegularGridInterpolator returns shape (n_query_points, ..., n_data_dims)
-        # We need to handle the spectral dimension carefully
-        result_spectrum = np.zeros(len(self.wavenumber), dtype=np.float64)
-
-        for i_wn in range(len(self.wavenumber)):
-            # Get the 2-D slice of data for this wavenumber (across all grid axes)
-            data_slice = self.data[..., i_wn]
-
-            # Interpolate this slice
-            interp = RegularGridInterpolator(
-                points=tuple(ax.values for ax in self.axes),
-                values=data_slice,
-                bounds_error=False,
-                fill_value=np.nan,
-            )
-            result_spectrum[i_wn] = interp(query_point)[0]
-
-        logger.debug(
-            f"LUT forward query: {kwargs}, spectrum shape {result_spectrum.shape}"
-        )
-
-        return {self.quantity: result_spectrum}
+        # One vectorised call per quantity returns the full spectrum.
+        result = {q: self.interpolators[q](query_point)[0]
+                  for q in self.quantities}
+        logger.debug(f"LUT forward query: {kwargs} → {list(result)}")
+        return result
 
     def _build_interpolator(self) -> None:
         """
-        Precompute and cache RegularGridInterpolator objects.
+        Build and cache one vector-valued RegularGridInterpolator per quantity.
 
-        For efficiency, we could cache one interpolator per wavenumber, but for
-        Phase 3 we'll use on-demand interpolation in forward() to keep memory usage
-        reasonable. This method is a placeholder for future optimization.
+        ``RegularGridInterpolator`` interpolates trailing value dimensions in
+        one shot, so passing the full ``self.data[q]`` (shape
+        ``(axis0, …, axisN, n_wn)``) carries the wavenumber axis as the value
+        vector.  Each interpolator then answers any query in a single call —
+        instead of rebuilding ``n_wn`` interpolators per ``forward()`` (the old
+        behaviour, which made heatmap rendering very slow).
         """
-        # Placeholder for future optimization (per-wavenumber caching)
-        pass
+        if self.data is None:
+            raise RuntimeError("Cannot build interpolator before compute()")
+        pts = tuple(ax.values for ax in self.axes)
+        self.interpolators = {
+            q: RegularGridInterpolator(pts, self.data[q],
+                                       bounds_error=False, fill_value=np.nan)
+            for q in self.quantities
+        }
 
     def save(self, path: str | Path) -> None:
         """
@@ -742,27 +891,28 @@ class MultiDimLUT:
         coords = {ax.name: ax.values for ax in self.axes}
         coords['wavenumber'] = self.wavenumber
 
-        # Data array with all dimensions
+        # One data variable per stored quantity.
         dim_names = tuple(ax.name for ax in self.axes) + ('wavenumber',)
-        data_array = xr.DataArray(
-            self.data,
+        ds = xr.Dataset(
+            {q: (dim_names, self.data[q]) for q in self.quantities},
             coords=coords,
-            dims=dim_names,
-            name=self.quantity,
         )
 
         # Add metadata as attributes
-        ds = data_array.to_dataset()
-        ds.attrs['quantity'] = self.quantity
+        ds.attrs['quantities'] = ','.join(self.quantities)
+        ds.attrs['quantity'] = self.quantity        # primary (back-compat)
+        ds.attrs['dist_type'] = self.dist_type
+        ds.attrs['s'] = self.s
         ds.attrs['substance'] = self.ri_constraint.substance
         ds.attrs['source'] = self.ri_constraint.source
         ds.attrs['sweep_axes'] = ','.join(self.ri_constraint.sweep_axes)
 
-        # Store axis metadata
+        # Store axis metadata.  NetCDF attributes can't be Python bools, so
+        # store flags as 0/1 ints (decoded back to bool in load()).
         for ax in self.axes:
             ds.attrs[f'axis_{ax.name}_units'] = ax.units
-            ds.attrs[f'axis_{ax.name}_log_spacing'] = ax.log_spacing
-            ds.attrs[f'axis_{ax.name}_fixed_for_ri_load'] = ax.fixed_for_ri_load
+            ds.attrs[f'axis_{ax.name}_log_spacing'] = int(ax.log_spacing)
+            ds.attrs[f'axis_{ax.name}_fixed_for_ri_load'] = int(ax.fixed_for_ri_load)
 
         # Save to NetCDF
         ds.to_netcdf(path, engine='netcdf4')
@@ -804,30 +954,27 @@ class MultiDimLUT:
 
         ds = xr.open_dataset(path, engine='netcdf4')
 
-        # Reconstruct axes from coordinates
-        quantity = ds.attrs.get('quantity', 'MEC')
+        # Which quantities are stored?  Prefer the explicit list; fall back to
+        # the (legacy) single-quantity attr or the data-var names.
+        q_attr = ds.attrs.get('quantities')
+        if q_attr:
+            quantities = [q for q in q_attr.split(',') if q]
+        else:
+            quantities = [q for q in ds.data_vars]
+        primary = ds.attrs.get('quantity', quantities[0])
         substance = ds.attrs.get('substance')
         source = ds.attrs.get('source')
         sweep_axes = ds.attrs.get('sweep_axes', '').split(',')
 
-        # Get data and wavenumber
         wavenumber = ds.coords['wavenumber'].values
-
-        # Reconstruct LUTAxis objects
-        axes = []
-        for var_name in ds.data_vars:
-            if var_name == quantity:
-                continue
-            # Coordinates are the axes
-            pass
 
         # Reconstruct from coordinates
         axes = []
         coord_names = [name for name in ds.coords if name != 'wavenumber']
         for coord_name in coord_names:
             units = ds.attrs.get(f'axis_{coord_name}_units', '')
-            log_spacing = ds.attrs.get(f'axis_{coord_name}_log_spacing', False)
-            fixed_for_ri = ds.attrs.get(f'axis_{coord_name}_fixed_for_ri_load', False)
+            log_spacing = bool(ds.attrs.get(f'axis_{coord_name}_log_spacing', 0))
+            fixed_for_ri = bool(ds.attrs.get(f'axis_{coord_name}_fixed_for_ri_load', 0))
 
             ax = LUTAxis(
                 name=coord_name,
@@ -846,15 +993,72 @@ class MultiDimLUT:
         )
 
         # Create LUT instance
-        lut = cls(axes, ri_constraint, wavenumber, quantity=quantity)
+        dist_type = ds.attrs.get('dist_type', 'log_normal')
+        s = float(ds.attrs.get('s', 1.5))
+        lut = cls(axes, ri_constraint, wavenumber, quantities=quantities,
+                  dist_type=dist_type, s=s)
+        if primary in lut.quantities:
+            lut.quantity = primary
 
-        # Load data
-        lut.data = ds[quantity].values
+        # Load each quantity's data array.
+        lut.data = {q: ds[q].values for q in quantities}
 
-        logger.info(f"LUT loaded from {path}: {substance} ({source}), shape {lut.shape}")
+        logger.info(f"LUT loaded from {path}: {substance} ({source}), "
+                    f"{len(quantities)} quantities, shape {lut.shape}")
         ds.close()
-
         return lut
+
+    @classmethod
+    def cache_entries(cls, cache_dir: 'str | Path | None' = None) -> list[dict]:
+        """
+        Lightweight metadata for every cached N-D LUT (``ndlut_*.nc``).
+
+        Reads only NetCDF attributes and coordinate sizes (not the data
+        arrays), so it is cheap enough to drive a GUI chooser.  Each dict has:
+        ``path``, ``substance``, ``source``, ``dist_type``, ``s``,
+        ``axes`` (list of (name, n)), ``n_wn``, ``wn_min``, ``wn_max``,
+        ``quantities`` (list), ``size_kb``, ``mtime``.  Unreadable files yield
+        a dict with ``error`` set.
+        """
+        from .lut import _DEFAULT_CACHE_DIR
+        cache_dir = Path(cache_dir) if cache_dir is not None else _DEFAULT_CACHE_DIR
+        if not cache_dir.exists():
+            return []
+        try:
+            import xarray as xr
+        except ImportError:
+            raise ImportError("Inspecting the N-D LUT cache requires xarray.")
+
+        entries: list[dict] = []
+        for path in sorted(cache_dir.glob('ndlut_*.nc')):
+            base = {'path': str(path),
+                    'size_kb': path.stat().st_size / 1024.0,
+                    'mtime': path.stat().st_mtime}
+            try:
+                with open(path, 'rb') as fh:
+                    magic = fh.read(4)
+                engine = ('scipy' if magic[:3] == b'CDF'
+                          else 'netcdf4' if magic == b'\x89HDF' else None)
+                with xr.open_dataset(path, engine=engine) as ds:
+                    wn = np.asarray(ds.coords['wavenumber'].values)
+                    axis_names = [c for c in ds.coords if c != 'wavenumber']
+                    q_attr = ds.attrs.get('quantities', '')
+                    quantities = [q for q in q_attr.split(',') if q] or list(ds.data_vars)
+                    entries.append({
+                        **base,
+                        'substance': ds.attrs.get('substance') or '',
+                        'source':    ds.attrs.get('source') or '',
+                        'dist_type': ds.attrs.get('dist_type', '?'),
+                        's':         float(ds.attrs.get('s', float('nan'))),
+                        'axes':      [(n, int(ds.coords[n].size)) for n in axis_names],
+                        'n_wn':      int(wn.size),
+                        'wn_min':    float(wn.min()),
+                        'wn_max':    float(wn.max()),
+                        'quantities': quantities,
+                    })
+            except Exception as exc:
+                entries.append({**base, 'error': str(exc)})
+        return entries
 
     def _load_ri_for_point(
         self,
@@ -890,29 +1094,25 @@ class MultiDimLUT:
         composition_wt = grid_values.get('composition', None)
         temperature_K = grid_values.get('temperature_K', None)
 
-        # Map substance to ARIA category and substance directory
-        # This is a simplified mapping; may need to be made more robust
+        # Map registry substance → (ARIA category, substance directory).
+        # The category is NOT always 'Acids' — water/ice live in 'Water_and_Ice'.
         substance_aria_map = {
-            'Sulphuric acid': 'Sulphuric',
-            'HNO3': 'Nitric acid',
-            'Water ice': 'Ice',
-            'Supercooled water': 'Water',
-            'Water (liquid)': 'Water',
+            'Sulphuric acid':    ('Acids', 'Sulphuric'),
+            'HNO3':              ('Acids', 'Nitric'),
+            'Water ice':         ('Water_and_Ice', 'Ice'),
+            'Supercooled water': ('Water_and_Ice', 'Water'),
+            'Water (liquid)':    ('Water_and_Ice', 'Water'),
         }
+        category, aria_substance = substance_aria_map.get(substance, ('', substance))
 
-        aria_substance = substance_aria_map.get(substance, substance)
-
-        # Search ARIA for matching file
-        # Pattern: source is in filename (e.g., "Myhre_2003", "Biermann_2000")
-        # Composition and temperature are also in filename
+        # Source appears in the filename (e.g. "Myhre_2003", "Curtis_2005").
         source_pattern = source.replace(' ', '_')
 
-        candidates = db.list(
-            category='Acids',  # H₂SO₄ and HNO₃ are in Acids category
-            pattern=aria_substance.lower(),
-        )
-
-        # Further filter by source
+        # All .ri files under category/substance, then keep those from this source.
+        if category:
+            candidates = db.references(category, aria_substance)
+        else:
+            candidates = db.list(substance=aria_substance.lower())
         source_candidates = [
             c for c in candidates
             if source_pattern.lower() in c.lower()
@@ -920,8 +1120,8 @@ class MultiDimLUT:
 
         if not source_candidates:
             raise FileNotFoundError(
-                f"No ARIA files found for {substance} from {source}. "
-                f"Searched: {candidates}"
+                f"No ARIA files found for {substance} from {source} "
+                f"in {category}/{aria_substance}. Searched {len(candidates)} files."
             )
 
         # Find best match based on composition and temperature

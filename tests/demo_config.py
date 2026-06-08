@@ -29,32 +29,9 @@ class SpectralRange:
 # GLOBAL DEFAULTS  (do not edit)
 # ============================================================================
 
-SPECTRAL_RANGES = {
-    'thermal_ir': SpectralRange(
-        wn_min=650.0,
-        wn_max=1350.0,
-        wn_step=1.0,
-        description='Thermal IR (8–15 µm) — common for aerosol retrievals'
-    ),
-    'mid_ir': SpectralRange(
-        wn_min=500.0,
-        wn_max=5000.0,
-        wn_step=5.0,
-        description='Mid-IR (2–20 µm) — complete aerosol spectrum'
-    ),
-    'solar': SpectralRange(
-        wn_min=4000.0,
-        wn_max=50000.0,
-        wn_step=10.0,
-        description='Solar (0.2–2.5 µm) — visible to near-IR'
-    ),
-    'visible': SpectralRange(
-        wn_min=10000.0,
-        wn_max=25000.0,
-        wn_step=50.0,
-        description='Visible (0.4–1.0 µm) — VIS instruments'
-    ),
-}
+# Built from the canonical presets in mieEODG.constants (single source of truth).
+from mieEODG.constants import SPECTRAL_RANGE_PRESETS as _PRESETS
+SPECTRAL_RANGES = {name: SpectralRange(**spec) for name, spec in _PRESETS.items()}
 
 # ============================================================================
 # OVERRIDE DEFAULTS  (set to non-None to override for all demo scripts)

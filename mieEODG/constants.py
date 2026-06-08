@@ -300,6 +300,32 @@ SUBSTANCE_DENSITY: dict[str, float] = {
 
 
 # ---------------------------------------------------------------------------
+# Spectral range presets
+# ---------------------------------------------------------------------------
+
+#: Named spectral-grid presets (wavenumber bounds + default step, cm⁻¹).
+#: Single source of truth — the demo config and the GUI both build from this.
+SPECTRAL_RANGE_PRESETS: dict[str, dict] = {
+    'thermal_ir': {
+        'wn_min': 650.0, 'wn_max': 1350.0, 'wn_step': 1.0,
+        'description': 'Thermal IR (8–15 µm) — common for aerosol retrievals',
+    },
+    'mid_ir': {
+        'wn_min': 500.0, 'wn_max': 5000.0, 'wn_step': 5.0,
+        'description': 'Mid-IR (2–20 µm) — complete aerosol spectrum',
+    },
+    'solar': {
+        'wn_min': 4000.0, 'wn_max': 50000.0, 'wn_step': 10.0,
+        'description': 'Solar (0.2–2.5 µm) — visible to near-IR',
+    },
+    'visible': {
+        'wn_min': 10000.0, 'wn_max': 25000.0, 'wn_step': 50.0,
+        'description': 'Visible (0.4–1.0 µm) — VIS instruments',
+    },
+}
+
+
+# ---------------------------------------------------------------------------
 # Canonical ARIA default entries
 # ---------------------------------------------------------------------------
 

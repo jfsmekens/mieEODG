@@ -259,16 +259,25 @@ def readRI(
     try:
         absc_col = fmt_upper.index('WAVL') if 'WAVL' in fmt_upper else fmt_upper.index('WAVN')
         n_col    = fmt_upper.index('N')
-        k_col    = fmt_upper.index('K')
     except ValueError as exc:
         raise ValueError(
             f"Unexpected FORMAT columns {fmt_cols!r} in {filepath}. "
-            "Expected columns N and K plus one of WAVL or WAVN."
+            "Expected column N plus one of WAVL or WAVN."
         ) from exc
 
     absc_raw = data[:, absc_col]
     n_raw    = data[:, n_col]
-    k_raw    = data[:, k_col]
+
+    # K column is optional: transparent (non-absorbing) materials such as
+    # deliquesced salts in the visible/near-IR are tabulated as WAVL/WAVN + N
+    # only.  Absent K is physically equivalent to zero absorption.
+    if 'K' in fmt_upper:
+        k_raw = data[:, fmt_upper.index('K')]
+    else:
+        k_raw = np.zeros_like(n_raw)
+        logger.debug(
+            "No K column in %s; assuming k = 0 (non-absorbing).", filepath.name
+        )
 
     # Convert abscissa to wavenumber [cm⁻¹], ascending
     is_wavelength = 'WAVL' in fmt_upper
@@ -277,6 +286,16 @@ def readRI(
         wavn_raw = _UM_TO_WAVN / absc_raw
     else:
         wavn_raw = absc_raw.copy()
+
+    # Drop non-positive wavenumbers (a 0 entry means infinite wavelength and
+    # is unusable for Mie / plotting); keep only physical, finite points.
+    good = np.isfinite(wavn_raw) & (wavn_raw > 0.0)
+    if not np.all(good):
+        logger.debug("%s: dropping %d non-positive/non-finite wavenumber rows",
+                     filepath.name, int((~good).sum()))
+        wavn_raw = wavn_raw[good]
+        n_raw    = n_raw[good]
+        k_raw    = k_raw[good]
 
     # Sort into ascending wavenumber order
     sort_idx = np.argsort(wavn_raw)
@@ -711,6 +730,35 @@ class ARIADatabase:
         if not cat_dir.is_dir():
             raise FileNotFoundError(f"Category not found: {category}")
         return sorted(p.name for p in cat_dir.iterdir() if p.is_dir())
+
+    def references(self, category: str, substance: str) -> list[str]:
+        """
+        Return every ``.ri`` file under ``category/substance``.
+
+        The ARIA tree has variable depth below a substance (source, then
+        optionally condition sub-folders such as concentration/temperature),
+        and a substance may have several studies.  This returns each leaf
+        ``.ri`` file as a relative path from the database root, so a caller
+        can offer an explicit *reference* choice rather than silently taking
+        the first match.
+
+        Parameters
+        ----------
+        category, substance : str
+            Exact category and substance directory names
+            (as returned by :meth:`categories` / :meth:`substances`).
+
+        Returns
+        -------
+        list[str]
+            Sorted relative paths to the substance's ``.ri`` files.
+        """
+        sub_dir = self.root / category / substance
+        if not sub_dir.is_dir():
+            raise FileNotFoundError(
+                f"Substance not found: {category}/{substance}")
+        return sorted(
+            p.relative_to(self.root).as_posix() for p in sub_dir.rglob('*.ri'))
 
     def __repr__(self) -> str:
         n = len(self.list())

@@ -604,6 +604,176 @@ class GaussianDist(SizeDistribution):
         )
 
 
+class MonodisperseDist(SizeDistribution):
+    """
+    Monodisperse (single-size) population: all particles share radius r₀.
+
+    This represents a delta function n(r) = N · δ(r − r₀): a population of
+    ``N`` identical particles per unit volume.  It is **not** integrated by
+    the quadrature machinery in :func:`~mieEODG.mieSizeDist` (a delta cannot
+    be sampled at Gauss nodes); single-particle optical properties are
+    obtained directly from :func:`~mieEODG.mieSingle`.  This class exists so
+    a single size can be carried, labelled, and visualised (e.g. by
+    :func:`~mieEODG.plot_size_dist`, which renders it as a stem at r₀)
+    consistently with the distribution classes.
+
+    Parameters
+    ----------
+    r0 : float
+        Particle radius [cm].
+    n : float
+        Number density [cm⁻³].  Default 1.0.
+    """
+
+    dist_name = 'monodisperse'
+
+    def __init__(self, r0: float, *, n: float = 1.0) -> None:
+        if r0 <= 0.0:
+            raise ValueError(f"Radius r0 must be > 0; got r0={r0}.")
+        if n <= 0.0:
+            raise ValueError(f"Number density n must be > 0; got n={n}.")
+        self.r0 = float(r0)
+        self.N  = float(n)
+
+    @classmethod
+    def from_um(cls, r0_um: float, *, n: float = 1.0) -> 'MonodisperseDist':
+        """Construct with ``r0`` supplied in µm (converted to cm internally)."""
+        return cls(r0_um * 1.0e-4, n=n)
+
+    def pdf(self, r: np.ndarray | float) -> np.ndarray:
+        """Delta function — zero everywhere except (formally) at r₀.
+
+        Returned as zeros for array sampling; the mass is concentrated at a
+        single point and is not representable on a continuous grid.  Callers
+        that need the single-size optics should use :func:`mieSingle`.
+        """
+        return np.zeros_like(np.atleast_1d(np.asarray(r, dtype=np.float64)))
+
+    def bounds(self) -> tuple[float, float]:
+        """Return a tight bracket around r₀ (±1 %)."""
+        return (0.99 * self.r0, 1.01 * self.r0)
+
+    @property
+    def params(self) -> list:
+        return [self.r0]
+
+    @property
+    def r0_um(self) -> float:
+        """Radius in µm (``r0 * 1e4``)."""
+        return self.r0 * 1.0e4
+
+    def __repr__(self) -> str:
+        return f"MonodisperseDist(r0={self.r0:.4g}, N={self.N:.4g})"
+
+
+class TabulatedDist(SizeDistribution):
+    """
+    Arbitrary size distribution defined by a tabulated n(r) curve.
+
+    Wraps measured or user-supplied size-distribution data so it can be used
+    like the analytic distributions (e.g. fed to :class:`~mieEODG.AerosolXSC`).
+    ``pdf`` linearly interpolates the table and is zero outside its range.
+
+    Parameters
+    ----------
+    r : array-like
+        Radii [cm], strictly increasing (sorted on construction).
+    n : array-like
+        Number size distribution n(r) at each radius (same length as ``r``).
+        Units arbitrary; the total number density ``N`` is the trapezoidal
+        integral ∫ n(r) dr.
+    """
+
+    dist_name = 'tabulated'
+
+    def __init__(self, r: np.ndarray, n: np.ndarray) -> None:
+        r = np.asarray(r, dtype=np.float64)
+        n = np.asarray(n, dtype=np.float64)
+        if r.ndim != 1 or r.shape != n.shape:
+            raise ValueError("r and n must be 1-D arrays of equal length.")
+        if r.size < 2:
+            raise ValueError("Tabulated distribution needs at least 2 points.")
+        order = np.argsort(r)
+        self.r = r[order]
+        self._n = np.clip(n[order], 0.0, None)   # number density is non-negative
+        if not np.all(self.r > 0):
+            raise ValueError("All radii must be > 0.")
+        self.N = float(np.trapz(self._n, self.r))
+
+    @classmethod
+    def from_dndlnr(cls, r_um: np.ndarray, dndlnr: np.ndarray,
+                    *, n: float | None = None) -> 'TabulatedDist':
+        """Construct from the plotted quantity dN/d ln r vs radius [µm].
+
+        ``dN/d ln r = r · n(r)`` ⟹ ``n(r) = (dN/d ln r) / r``.  If ``n`` is
+        given, the curve is rescaled so the total number density equals it
+        (useful since a measured PDF is often shape-only / normalised).
+        """
+        r_cm = np.asarray(r_um, dtype=np.float64) * 1e-4
+        n_r = np.asarray(dndlnr, dtype=np.float64) / r_cm
+        d = cls(r_cm, n_r)
+        if n is not None and d.N > 0:
+            d._n *= (n / d.N)
+            d.N = float(n)
+        return d
+
+    def dndlnr_um(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return ``(radius_µm, dN/d ln r)`` for plotting / export."""
+        return self.r * 1e4, self._n * self.r
+
+    def pdf(self, r: np.ndarray | float) -> np.ndarray:
+        r = np.atleast_1d(np.asarray(r, dtype=np.float64))
+        return np.interp(r, self.r, self._n, left=0.0, right=0.0)
+
+    def bounds(self) -> tuple[float, float]:
+        return float(self.r[0]), float(self.r[-1])
+
+    @property
+    def params(self) -> list:
+        return []
+
+    @property
+    def r0_um(self) -> float:
+        """Number-weighted mean radius [µm] (for labelling/colouring)."""
+        if self.N <= 0:
+            return float('nan')
+        return float(np.trapz(self._n * self.r, self.r) / self.N) * 1e4
+
+    def __repr__(self) -> str:
+        return f"TabulatedDist({len(self.r)} pts, N={self.N:.4g})"
+
+
+def _make_dist(
+    dist_type: str,
+    r0_cm: float,
+    s: float,
+) -> SizeDistribution:
+    """
+    Instantiate a size distribution for a single LUT grid point (r₀ sweep).
+
+    Shared by :class:`~mieEODG.AerosolLUT` and
+    :class:`~mieEODG.lut_multi.MultiDimLUT` so both sweep r₀ identically.
+
+    Parameters
+    ----------
+    dist_type : {'log_normal', 'gaussian', 'monodisperse'}
+    r0_cm : float
+        Median / mean radius [cm].
+    s : float
+        Spread parameter.  For log-normal: geometric std > 1.  For Gaussian:
+        ``sigma = r0 * ln(s)`` (comparable width).  Ignored for monodisperse.
+    """
+    if dist_type == 'log_normal':
+        return LogNormalDist(r0=r0_cm, s=s, n=1.0)
+    elif dist_type == 'gaussian':
+        sigma = r0_cm * np.log(s)   # matches lognormal spread near r0
+        return GaussianDist(r0=r0_cm, sigma=sigma, n=1.0)
+    elif dist_type == 'monodisperse':
+        return MonodisperseDist(r0=r0_cm, n=1.0)   # single size; s ignored
+    else:
+        raise ValueError(f"Unsupported dist_type for LUT: {dist_type!r}")
+
+
 def createDist(
     dist_type: str,
     **kwargs,

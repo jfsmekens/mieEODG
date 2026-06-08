@@ -51,7 +51,7 @@ class TestForwardInterpolation:
         assert spectrum.shape == (len(h2so4_lut.wavenumber),)
 
         # Should match the data array exactly
-        expected = h2so4_lut.data[0, 0, :]
+        expected = h2so4_lut.data['MEC'][0, 0, :]
         # Allow small numerical differences
         if not np.any(np.isnan(expected)):
             np.testing.assert_allclose(spectrum, expected, rtol=1e-10)
@@ -65,9 +65,9 @@ class TestForwardInterpolation:
         assert spectrum.shape == (len(h2so4_lut.wavenumber),)
 
         # Should be between grid point values
-        if not np.any(np.isnan(h2so4_lut.data[0, 0, :])):
-            val_0p1 = h2so4_lut.data[0, 0, 0]  # First wavenumber, r0=0.1
-            val_0p5 = h2so4_lut.data[1, 0, 0]  # First wavenumber, r0=0.5
+        if not np.any(np.isnan(h2so4_lut.data['MEC'][0, 0, :])):
+            val_0p1 = h2so4_lut.data['MEC'][0, 0, 0]  # First wavenumber, r0=0.1
+            val_0p5 = h2so4_lut.data['MEC'][1, 0, 0]  # First wavenumber, r0=0.5
             val_0p25 = spectrum[0]
 
             # Linear interpolation in log space (approximately)
@@ -174,13 +174,13 @@ class TestNetCDFPersistence:
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / 'test_lut.nc'
 
-            original_data = h2so4_lut.data.copy()
+            original_data = h2so4_lut.data['MEC'].copy()
             h2so4_lut.save(path)
 
             loaded_lut = MultiDimLUT.load(path)
 
             # Data should match exactly (or within numerical tolerance)
-            np.testing.assert_array_equal(loaded_lut.data, original_data)
+            np.testing.assert_array_equal(loaded_lut.data['MEC'], original_data)
 
     def test_load_preserves_axes(self, h2so4_lut):
         """load() preserves axis definitions."""

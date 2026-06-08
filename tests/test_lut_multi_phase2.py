@@ -42,14 +42,14 @@ class TestComputeAriaSinglePoint:
         lut.compute(progress=False)
 
         # Check shape
-        assert lut.data.shape == (3, 1, len(wn))
+        assert lut.data['MEC'].shape == (3, 1, len(wn))
 
         # Check that data is populated and not all NaN
-        valid_data = ~np.isnan(lut.data)
+        valid_data = ~np.isnan(lut.data['MEC'])
         assert np.any(valid_data), "All data is NaN; compute failed"
 
         # Check that values are physically reasonable (positive)
-        valid_values = lut.data[valid_data]
+        valid_values = lut.data['MEC'][valid_data]
         assert np.all(valid_values > 0), "Negative or zero values in MEC"
 
     def test_compute_h2so4_multiple_compositions(self):
@@ -75,12 +75,12 @@ class TestComputeAriaSinglePoint:
         lut.compute(progress=False)
 
         # Check shape
-        assert lut.data.shape == (2, 3, len(wn))
+        assert lut.data['MEC'].shape == (2, 3, len(wn))
 
         # Check that different compositions yield different spectra
         # (This assumes Mie scattering depends on composition)
-        spec_48 = lut.data[0, 0, :]  # r0=0.2, composition=48
-        spec_65 = lut.data[0, 2, :]  # r0=0.2, composition=65
+        spec_48 = lut.data['MEC'][0, 0, :]  # r0=0.2, composition=48
+        spec_65 = lut.data['MEC'][0, 2, :]  # r0=0.2, composition=65
 
         # They should differ significantly
         if not np.any(np.isnan(spec_48)) and not np.any(np.isnan(spec_65)):
@@ -173,10 +173,10 @@ class TestDataConsistency:
         )
 
         lut.compute(progress=False)
-        data_first = lut.data.copy()
+        data_first = lut.data['MEC'].copy()
 
         lut.compute(progress=False)
-        data_second = lut.data.copy()
+        data_second = lut.data['MEC'].copy()
 
         # Should be identical (or very close)
         if np.any(~np.isnan(data_first)):
