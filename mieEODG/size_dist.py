@@ -23,6 +23,12 @@ from abc import ABC, abstractmethod
 import numpy as np
 from scipy.stats import norm as _scipy_norm
 
+# NumPy compatibility: ``np.trapezoid`` was added in NumPy 2.0 and ``np.trapz``
+# removed in later 2.x.  Prefer ``trapezoid``; only touch ``trapz`` on NumPy <2
+# (a plain ``getattr(np, "trapezoid", np.trapz)`` fails because the default is
+# evaluated eagerly and ``np.trapz`` no longer exists).
+_trapz = np.trapezoid if hasattr(np, "trapezoid") else np.trapz
+
 # Gaussian critical value: P(Z > Tq) = 0.999  (≈ -3.0902)
 # Used to set log-normal integration bounds at the 0.1 % tail.
 _TQ = float(_scipy_norm.ppf(0.001))
@@ -698,7 +704,7 @@ class TabulatedDist(SizeDistribution):
         self._n = np.clip(n[order], 0.0, None)   # number density is non-negative
         if not np.all(self.r > 0):
             raise ValueError("All radii must be > 0.")
-        self.N = float(np.trapz(self._n, self.r))
+        self.N = float(_trapz(self._n, self.r))
 
     @classmethod
     def from_dndlnr(cls, r_um: np.ndarray, dndlnr: np.ndarray,
@@ -737,7 +743,7 @@ class TabulatedDist(SizeDistribution):
         """Number-weighted mean radius [µm] (for labelling/colouring)."""
         if self.N <= 0:
             return float('nan')
-        return float(np.trapz(self._n * self.r, self.r) / self.N) * 1e4
+        return float(_trapz(self._n * self.r, self.r) / self.N) * 1e4
 
     def __repr__(self) -> str:
         return f"TabulatedDist({len(self.r)} pts, N={self.N:.4g})"
