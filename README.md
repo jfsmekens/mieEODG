@@ -18,9 +18,10 @@ precomputed look-up table (LUT) system for fast retrieval use.
   (exact single particle), and Tabulated (measured/custom PDFs) with easy
   µm-to-cm conversion via `from_um()` constructors; `savePDF()` / `loadPDF()`
   for CSV round-tripping of a distribution
-- **ARIA refractive index database** — bundled 450+ `.ri` files covering volcanic
-  ash, sulphuric acid, nitric acid, liquid water, ice, mineral dust, sea salt,
-  metals, minerals, and more
+- **ARIA refractive index database** — 450 `.ri` files shipped with the
+  package, covering volcanic ash, sulphuric acid, nitric acid, liquid water,
+  ice, mineral dust, sea salt, metals, minerals, and more.  No download or
+  configuration needed — see [ARIA database](#aria-database)
 - **Prata et al. (2019) volcanic ash RI parameterization** — generate complex
   refractive indices from bulk oxide composition using linear spectral
   regression (NBO/T or SiO₂); includes automatic Fe²⁺/Fe³⁺ split via
@@ -143,14 +144,16 @@ cd ../..
 
 ```python
 import numpy as np
-from mieEODG import ARIADatabase, AerosolXSC, AerosolLUT, LogNormalDist
+from mieEODG import (ARIADatabase, AerosolXSC, AerosolLUT, LogNormalDist,
+                     ARIA_DEFAULTS)
 
 # Spectral grid
 wn = np.arange(650, 1350.5, 0.5)   # cm⁻¹
 
-# Load refractive index from the bundled ARIA database
+# Load refractive index from the ARIA database.  Entries are addressed by
+# their path within the archive; ARIA_DEFAULTS maps short keys to those paths.
 db = ARIADatabase()
-ri = db.read('volcanic_ash', wavenumber=wn, out_of_range='clip')
+ri = db.read(ARIA_DEFAULTS['volcanic_ash'], wavenumber=wn, out_of_range='clip')
 
 # Single computation — one size distribution
 xsc = AerosolXSC(
@@ -207,8 +210,34 @@ The GUI requires `tkinter` (bundled with most Python builds) and `matplotlib`.
 
 ## ARIA database
 
-The bundled ARIA (Aerosol Refractive Index Archive) database contains
-measured complex refractive indices for a wide range of aerosol species.
+ARIA (Aerosol Refractive Index Archive) contains measured complex refractive
+indices for a wide range of aerosol species.  All 450 entries ship inside the
+package, so `ARIADatabase()` works immediately after install with nothing to
+download or configure.
+
+To use a different copy — a newer archive, or a shared one — override it.
+Resolution order, highest priority first:
+
+| # | Location | Notes |
+|---|---|---|
+| 1 | `ARIADatabase(path=...)` | explicit argument |
+| 2 | `$MIEODG_ARIA_ROOT` | environment override; set-but-missing is an error |
+| 3 | `aria_dir` in `~/.config/mieEODG/config.ini` | written by `python -m mieEODG configure --aria-dir` |
+| 4 | `mieEODG/data/ARIA` | **bundled — the default** |
+| 5 | `~/ARIA` | copy kept outside the package |
+| 6 | `$RFM_DIR/ARIA`, `~/RFM/ARIA` | legacy; logged once at INFO |
+
+Check which one is in use:
+
+```bash
+python -m mieEODG configure
+```
+
+Layer 6 exists only for installs that unpacked ARIA inside the RFM tree,
+because ARIA and RFM come from the same group and are often placed side by
+side.  **RFM does not read ARIA** — it consumes the `.xsc` cross-sections
+mieEODG writes — so the two are independent.
+
 Use `ARIADatabase` to browse and load entries:
 
 ```python
@@ -225,7 +254,12 @@ print(ri.substance)    # 'Etna ash'
 print(ri.category)     # 'volcanic_ash'
 print(ri.T_K)          # temperature [K] parsed from header, or None
 print(ri.composition)  # e.g. {'SiO2': 0.58} for volcanic ash
+print(ri.reference)    # the measurement study this material comes from
 ```
+
+> **Publishing?** Cite the study in `ri.reference` for every material you use.
+> See [License](#license).
+
 
 ---
 
@@ -317,7 +351,7 @@ mieEODG/
 │   │   ├── mie_kernel.f90  # Fortran 90 Mie kernel source
 │   │   └── *.so / *.pyd    # compiled extension (build locally, not committed)
 │   └── data/
-│       ├── ARIA/           # bundled refractive index database (450+ entries)
+│       ├── ARIA/           # bundled refractive index database (450 entries)
 │       ├── Prata2019_coeff.csv  # volcanic ash RI parameterization coefficients
 │       ├── lut_design_v1.md     # N-D LUT architecture reference
 │       ├── aria_audit/          # ARIA database audit results
@@ -347,6 +381,10 @@ The ARIA refractive index database is distributed with permission from the
 Oxford EODG group:
 [https://eodg.atm.ox.ac.uk/ARIA/](https://eodg.atm.ox.ac.uk/ARIA/)
 
+ARIA has been compiled by Don Grainger, Dan Peters, Lieven Clarisse and
+Hervé Herbin.  See [License](#license) for attribution and the citation
+requirements that apply when publishing results derived from this data.
+
 ---
 
 ## License
@@ -358,11 +396,34 @@ package developed at the Atmospheric, Oceanic and Planetary Physics group,
 University of Oxford:
 [https://eodg.atm.ox.ac.uk/MIE/](https://eodg.atm.ox.ac.uk/MIE/)
 
-The bundled ARIA (Aerosol Refractive Index Archive) refractive index data
-are provided by the Oxford EODG and redistributed here with permission.
-Users of this data should cite the original measurement sources listed in
-the individual `.ri` file headers, and acknowledge the ARIA archive:
+### ARIA refractive index data
+
+The ARIA (Aerosol Refractive Index Archive) data bundled with this package
+are provided by the Oxford EODG and redistributed with permission:
 [https://eodg.atm.ox.ac.uk/ARIA/](https://eodg.atm.ox.ac.uk/ARIA/)
+
+> ARIA has been compiled by Don Grainger, Dan Peters, Lieven Clarisse and
+> Hervé Herbin.  The following people are acknowledged for supporting ARIA:
+> Dr R. McPheat (Rutherford Appleton Laboratory).
+
+**Cite the original measurements, not ARIA.**  ARIA is a compilation of data
+published by others: each material's refractive indices come from a specific
+measurement study, and it is that study which must be cited in any
+publication using them.  Every `.ri` file records its own source in the
+`#REFERENCE` and `#DOI` header fields, and the parsed object exposes it:
+
+```python
+ri = db.read(ARIA_DEFAULTS['volcanic_ash'], wavenumber=wn)
+print(ri.reference)
+# A. Deguine, D. Petitprez, L. Clarisse, S. Gudmundsson, V. Outes,
+# G. Villarosa, and H. Herbin, "Complex refractive index of volcanic ash
+# aerosol in the infrared, visible, and ultraviolet," Appl. Opt. 59,
+# 884-895 (2020).
+```
+
+Cite that reference for **each material used**.  Acknowledging the ARIA
+archive and the compilers named above is appropriate in addition, but does
+not substitute for the primary citation.
 
 A formal open-source license for this package is yet to be determined.
 Until one is assigned, all rights are reserved by the authors.

@@ -24,6 +24,7 @@ The key differences from the srfm version:
 
 from __future__ import annotations
 
+import configparser
 import logging
 import os
 import re
@@ -37,37 +38,165 @@ from scipy.interpolate import interp1d
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Bundled ARIA path resolution
+# ARIA path resolution
+#
+# ARIA is mieEODG's input data: the archive holds refractive indices, this
+# package turns them into Mie optical properties.  RFM never reads it -- the
+# RFM aerosol path consumes ``.xsc`` cross-sections that mieEODG writes, and
+# the RFM Fortran source contains no reference to ARIA or to ``.ri`` files.
+#
+# The archive ships inside this package, so a plain install needs no setup and
+# resolves deterministically to the copy that release was tested against.  The
+# out-of-package locations below it exist for callers who deliberately point at
+# their own copy, and for installs that unpacked ARIA inside the RFM tree --
+# ARIA and RFM come from the same Oxford group and are often placed side by
+# side.  That is a fact about how people install them, not a dependency.
 # ---------------------------------------------------------------------------
 
-def _bundled_aria_path() -> Path:
-    """
-    Return the path to the ARIA database.
+_CONFIG_DIR = Path.home() / '.config' / 'mieEODG'
+_CONFIG_FILE = _CONFIG_DIR / 'config.ini'
 
-    Resolution order:
-    1. Environment variable ``MIEODG_ARIA_ROOT`` (allows user override).
-    2. ``mieEODG/data/ARIA`` bundled with the package.
+#: Out-of-package location checked below the bundled copy.
+_DEFAULT_ARIA_DIR = Path.home() / 'ARIA'
+
+#: Legacy location, from installs that unpacked ARIA inside the RFM tree.
+_LEGACY_RFM_DIR = Path.home() / 'RFM'
+
+#: Guard so the legacy-location notice is logged once per process, not per call.
+_legacy_notice_issued = False
+
+
+def _read_config() -> configparser.ConfigParser:
+    """Return a ConfigParser loaded from the user config file, empty if absent."""
+    cfg = configparser.ConfigParser()
+    if _CONFIG_FILE.exists():
+        cfg.read(_CONFIG_FILE)
+    return cfg
+
+
+def _cfg_get(key: str) -> str | None:
+    """Return a value from the ``[paths]`` section of the config file, or None."""
+    return _read_config().get('paths', key, fallback=None)
+
+
+def _as_dir(path: str | Path | None) -> Path | None:
+    """
+    Expand ``path`` and return it only if it resolves to an existing directory.
+
+    Returns *None* for a missing path or a dangling symlink, so a stale entry
+    is skipped rather than raising.
+    """
+    if not path:
+        return None
+    candidate = Path(os.path.expanduser(str(path))).resolve()
+    return candidate if candidate.is_dir() else None
+
+
+def _note_legacy_location(path: Path) -> None:
+    """Log once that ARIA was found at its pre-relocation location."""
+    global _legacy_notice_issued
+    if not _legacy_notice_issued:
+        logger.info(
+            "ARIA resolved from the RFM tree (%s); the canonical location is %s.",
+            path, _DEFAULT_ARIA_DIR,
+        )
+        _legacy_notice_issued = True
+
+
+def get_aria_dir() -> Path:
+    """
+    Resolve the root directory of the ARIA refractive index database.
+
+    Resolution order, highest priority first:
+
+    1. ``MIEODG_ARIA_ROOT`` environment variable.
+    2. ``aria_dir`` under ``[paths]`` in ``~/.config/mieEODG/config.ini``.
+    3. ``mieEODG/data/ARIA`` bundled with the package -- the default.
+    4. ``~/ARIA`` -- a copy kept outside the package.
+    5. ``$RFM_DIR/ARIA``, then ``~/RFM/ARIA`` -- legacy, logged once at INFO.
+
+    Returns
+    -------
+    Path
+        Absolute path to the ARIA database root.
 
     Raises
     ------
     FileNotFoundError
-        If neither location contains a valid directory.
+        If no candidate resolves to an existing directory.  The message lists
+        every location tried and why it was rejected.  ``MIEODG_ARIA_ROOT`` is
+        treated as an assertion rather than a hint: when it is set but does not
+        exist, that is an error, not a reason to silently read a different
+        database than the caller asked for.
     """
     env = os.environ.get('MIEODG_ARIA_ROOT')
     if env:
-        p = Path(env).resolve()
-        if p.is_dir():
-            return p
-        raise FileNotFoundError(
-            f"MIEODG_ARIA_ROOT is set to '{env}' but the directory was not found."
-        )
-    bundled = Path(__file__).parent / 'data' / 'ARIA'
-    if bundled.is_dir():
-        return bundled
+        resolved = _as_dir(env)
+        if resolved is None:
+            raise FileNotFoundError(
+                f"MIEODG_ARIA_ROOT is set to '{env}' but the directory was not found."
+            )
+        return resolved
+
+    rfm_dir = os.environ.get('RFM_DIR')
+    cfg_value = _cfg_get('aria_dir')
+
+    candidates: list[tuple[str, Path | str | None, str, bool]] = [
+        ('aria_dir', cfg_value,
+         f'no config file at {_CONFIG_FILE}' if not _CONFIG_FILE.exists()
+         else 'not set in config file',
+         False),
+        ('bundled', Path(__file__).parent / 'data' / 'ARIA', 'not present', False),
+        ('~/ARIA', _DEFAULT_ARIA_DIR, 'not found', False),
+        ('$RFM_DIR/ARIA',
+         Path(os.path.expanduser(rfm_dir)) / 'ARIA' if rfm_dir else None,
+         'not found' if rfm_dir else 'RFM_DIR not set',
+         True),
+        ('~/RFM/ARIA', _LEGACY_RFM_DIR / 'ARIA', 'not found', True),
+    ]
+
+    tried = ['MIEODG_ARIA_ROOT   not set']
+    for label, candidate, reason, is_legacy in candidates:
+        resolved = _as_dir(candidate)
+        if resolved is not None:
+            if is_legacy:
+                _note_legacy_location(resolved)
+            return resolved
+        tried.append(f'{label:<18} {reason}')
+
+    listing = '\n  '.join(tried)
     raise FileNotFoundError(
-        "Bundled ARIA database not found.  "
-        "Set the MIEODG_ARIA_ROOT environment variable to your local ARIA path."
+        "ARIA refractive index database not found.\n\n"
+        f"  {listing}\n\n"
+        "ARIA ships with mieEODG, so an absent bundled copy usually means an "
+        "incomplete install or a source checkout without the data files.  "
+        f"Reinstall the package, or unpack the archive to {_DEFAULT_ARIA_DIR}, "
+        "or point mieEODG at an existing copy:\n\n"
+        "    python -m mieEODG configure --aria-dir /path/to/ARIA\n"
     )
+
+
+def write_config(aria_dir: str | Path | None = None) -> None:
+    """
+    Persist path settings to ``~/.config/mieEODG/config.ini``.
+
+    Only non-None arguments are written; existing values for other keys are
+    left unchanged.
+
+    Parameters
+    ----------
+    aria_dir : str or Path, optional
+        Path to the ARIA database root directory.
+    """
+    _CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    cfg = _read_config()
+    if 'paths' not in cfg:
+        cfg['paths'] = {}
+    if aria_dir is not None:
+        cfg['paths']['aria_dir'] = str(aria_dir)
+    with open(_CONFIG_FILE, 'w') as f:
+        cfg.write(f)
+
 
 # Conversion factor: 1 μm ↔ 10000 cm⁻¹
 _UM_TO_WAVN = 1.0e4   # wavenumber (cm⁻¹) = 10000 / wavelength (μm)
@@ -542,9 +671,9 @@ class ARIADatabase:
     ----------
     path : str or Path or None
         Path to the local ARIA database root directory.  If *None* (default),
-        the bundled database is used (location resolved by
-        :func:`_bundled_aria_path`; can be overridden with the
-        ``MIEODG_ARIA_ROOT`` environment variable).
+        the database is located by :func:`get_aria_dir`, which checks
+        ``MIEODG_ARIA_ROOT``, the user config file, ``~/ARIA``, the
+        legacy RFM-tree locations, and finally the bundled copy.
 
     Examples
     --------
@@ -558,7 +687,7 @@ class ARIADatabase:
 
     def __init__(self, path: str | Path | None = None) -> None:
         if path is None:
-            self.root = _bundled_aria_path()
+            self.root = get_aria_dir()
         else:
             self.root = Path(path).resolve()
             if not self.root.is_dir():

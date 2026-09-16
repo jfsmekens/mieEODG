@@ -35,7 +35,8 @@ from .size_dist import (
     TabulatedDist, createDist,
 )
 from .functions import savePDF, loadPDF
-from .refindex import ARIADatabase, RefrIndex, readRI, ash_refrindex, write_ri
+from .refindex import (ARIADatabase, RefrIndex, readRI, ash_refrindex,
+                       write_ri, get_aria_dir, write_config)
 from .composition import BulkComposition, nbot_from_composition
 from .aerosol import AerosolXSC, AerosolResult
 from .lut import AerosolLUT
