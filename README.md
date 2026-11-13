@@ -57,7 +57,7 @@ precomputed look-up table (LUT) system for fast retrieval use.
 
 | Package | Version | Notes |
 |---|---|---|
-| Python | ≥ 3.9 | |
+| Python | ≥ 3.11 | |
 | NumPy | any recent | |
 | SciPy | any recent | |
 | xarray | optional | required for LUT save/load |
@@ -71,72 +71,62 @@ precomputed look-up table (LUT) system for fast retrieval use.
 
 ## Installation
 
-### 1. Clone the repository
+### Build requirements
+
+mieEODG compiles a Fortran kernel at install time. You need a **Fortran
+compiler** on your `PATH`:
+
+| Platform | Compiler |
+|---|---|
+| macOS | `brew install gcc` (provides `gfortran`) |
+| Linux | `sudo apt install gfortran` (or your distribution's equivalent) |
+| conda, any platform | `conda install -c conda-forge gfortran` |
+
+The other build tools (NumPy's f2py, `meson`, `meson-python`, `ninja`) are
+declared in `pyproject.toml` and fetched automatically by pip. No compiler,
+no problem: the install still succeeds and falls back to the pure
+Python/NumPy kernel, which gives identical results ~4-40× more slowly.
+**The fallback is silent**, so check which backend you got (below).
+
+### Install from GitHub
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/mieEODG.git
+pip install "git+https://github.com/jfsmekens/mieEODG.git"          # core
+pip install "mieEODG[full] @ git+https://github.com/jfsmekens/mieEODG.git"   # + LUT files, plots, progress bars
+```
+
+There are no releases on PyPI; rerun with `--upgrade` to pick up fixes. The
+optional extras are `lut` (xarray, netCDF4), `plot` (matplotlib, cmcrameri),
+`progress` (tqdm), `full` (all of these) and `dev` (pytest).
+
+### Development install
+
+```bash
+git clone https://github.com/jfsmekens/mieEODG.git
 cd mieEODG
+pip install -e ".[full,dev]"
 ```
 
-### 2. Create a virtual environment
+### Check the Fortran backend
 
-**conda (recommended):**
-```bash
-conda create -n mie python=3.11
-conda activate mie
-conda install numpy scipy xarray tqdm matplotlib
-pip install cmcrameri netCDF4
-```
-
-**venv:**
-```bash
-python -m venv .venv
-source .venv/bin/activate          # Linux / macOS
-# .venv\Scripts\activate           # Windows
-pip install numpy scipy xarray tqdm matplotlib cmcrameri netCDF4
-```
-
-### 3. Install the package in editable mode
-
-```bash
-pip install -e .
-```
-
-### 4. Build the Fortran backend (optional but recommended)
-
-The Fortran backend provides a ~40× speedup for the Mie kernel by replacing
-the Python/NumPy inner loop with a compiled Fortran 90 routine.
-
-**Key points:**
-
-- **Automatic build:** The custom PEP 517 backend in `build.py` automatically
-  compiles the Fortran extension during `pip install -e .` if a Fortran
-  compiler is available.
-- **Requirements:** a Fortran compiler (`gfortran` on Linux/macOS, Intel `ifort`,
-  or MSVC with MinGW on Windows); NumPy and meson (installed automatically with
-  build dependencies).
-- **Fallback:** If compilation fails, the package installs successfully with the
-  Python backend available as a fallback. All features work at baseline speed.
-
-Verify the build:
 ```python
-from mieEODG.fortran._mie_kernel_f90 import mie_batch
-print("Fortran backend available!")
+from mieEODG.fortran._mie_kernel_f90 import mie_batch   # ImportError → Python fallback
 ```
 
-If the import succeeds, pass `backend='fortran'` to `AerosolXSC` or 
-`AerosolLUT.load_or_compute()` to use the compiled extension.
+If the import succeeds, pass `backend='fortran'` to `AerosolXSC` or
+`AerosolLUT.load_or_compute()` to use the compiled extension. If it fails,
+install a compiler and reinstall, or build it in place in a development
+checkout:
 
-If compilation fails or you need to rebuild:
 ```bash
 cd mieEODG/fortran
 python -m numpy.f2py -c mie_kernel.f90 -m _mie_kernel_f90
-cd ../..
 ```
 
-> **Note:** The compiled `.so` / `.pyd` file is platform- and Python-version-specific
-> (e.g., `_mie_kernel_f90.cpython-312-darwin.so`). Each Python environment must build
-> locally; pre-built wheels are not distributed.
+The compiled `.so` / `.pyd` is specific to the platform and Python version
+(e.g. `_mie_kernel_f90.cpython-312-darwin.so`), so each environment builds its
+own; no pre-built wheels are distributed. See [BUILD_FORTRAN.md](BUILD_FORTRAN.md)
+for details of the build backend.
 
 ---
 
@@ -374,56 +364,83 @@ mieEODG/
 
 ## Provenance
 
-Ported from the EODG IDL Mie scattering package:
-[https://eodg.atm.ox.ac.uk/MIE/](https://eodg.atm.ox.ac.uk/MIE/)
+mieEODG is a Python and Fortran 90 port of the Mie scattering routines of the
+Earth Observation Data Group (EODG), Atmospheric, Oceanic and Planetary
+Physics, University of Oxford: <https://eodg.atm.ox.ac.uk/MIE/>. The original
+IDL and Fortran routines were written by Don Grainger, Gareth Thomas, Andy
+Smith, Greg McGarragh and colleagues (1990-2015). They are not included in
+this repository; download them from EODG
+([eodg_mie.tar.gz](https://eodg.atm.ox.ac.uk/MIE/eodg_mie.tar.gz)). Module
+docstrings cite the original routine each function was ported from, e.g.
+`IDLsource/mie_single.pro` refers to `mie_single.pro` in that distribution.
 
-The ARIA refractive index database is distributed with permission from the
-Oxford EODG group:
-[https://eodg.atm.ox.ac.uk/ARIA/](https://eodg.atm.ox.ac.uk/ARIA/)
+The bundled refractive index data are a copy of ARIA, the Aerosol Refractive
+Index Archive (<https://eodg.atm.ox.ac.uk/ARIA/>), compiled at EODG by Don
+Grainger, Dan Peters, Lieven Clarisse and Hervé Herbin. ARIA is a compilation
+of measurements published by others; every source is listed in
+[`mieEODG/data/ARIA/REFERENCES.md`](mieEODG/data/ARIA/REFERENCES.md).
 
-ARIA has been compiled by Don Grainger, Dan Peters, Lieven Clarisse and
-Hervé Herbin.  See [License](#license) for attribution and the citation
-requirements that apply when publishing results derived from this data.
+mieEODG is not an official EODG product.
+
+---
+
+## Citing
+
+If you publish results computed with mieEODG, cite:
+
+1. **The EODG Mie code** this package is ported from:
+   <https://eodg.atm.ox.ac.uk/MIE/>. If you use the derivative routines
+   (`mie_derivs`, `mie_derivs_ln`), cite also
+   > Grainger, R. G., Lucas, J., Thomas, G. E., and Ewen, G. B. L. (2004).
+   > Calculation of Mie derivatives. *Applied Optics*, 43(28), 5386-5393.
+   > doi:[10.1364/AO.43.005386](https://doi.org/10.1364/AO.43.005386)
+
+2. **The measurement study behind every refractive index you use.** ARIA asks
+   for the source publications to be acknowledged. Each `.ri` file records its
+   source in the `#REFERENCE` and `#DOI` header fields, the parsed object
+   exposes it, and [`REFERENCES.md`](mieEODG/data/ARIA/REFERENCES.md) lists
+   all 90:
+
+   ```python
+   ri = db.read(ARIA_DEFAULTS['volcanic_ash'], wavenumber=wn)
+   print(ri.reference)
+   # A. Deguine, D. Petitprez, L. Clarisse, S. Gudmundsson, V. Outes,
+   # G. Villarosa, and H. Herbin, "Complex refractive index of volcanic ash
+   # aerosol in the infrared, visible, and ultraviolet," Appl. Opt. 59,
+   # 884-895 (2020).
+   ```
+
+   A few entries were taken by ARIA from the HITRAN aerosol compilation;
+   for those, cite also Massie, S. T. and Hervig, M. (2013), HITRAN 2012
+   refractive indices, *JQSRT* 130, 373-380,
+   doi:[10.1016/j.jqsrt.2013.06.022](https://doi.org/10.1016/j.jqsrt.2013.06.022).
+   Acknowledging the ARIA archive and its compilers is appropriate in
+   addition, but does not replace the primary citation.
+
+3. **The volcanic ash parameterization**, if you use it
+   (`ash_refrindex`, `composition.py`):
+   > Prata, G. S., Ventress, L. J., Carboni, E., Mather, T. A., Grainger, R. G.,
+   > and Pyle, D. M. (2019). A new parameterization of volcanic ash complex
+   > refractive index based on NBO/T and SiO₂ content. *Journal of Geophysical
+   > Research: Atmospheres*, 124(3), 1779-1797.
+   > doi:[10.1029/2018JD028679](https://doi.org/10.1029/2018JD028679)
+
+   with the Fe²⁺/Fe³⁺ split from Middlemost, E. A. K. (1989), Iron oxidation
+   ratios, norms and the classification of volcanic rocks, *Chemical Geology*
+   77, 19-26, doi:[10.1016/0009-2541(89)90011-9](https://doi.org/10.1016/0009-2541(89)90011-9).
+
+The `.xsc` files written for RFM use HITRAN's cross-section format; RFM itself
+is cited as Dudhia, A. (2017), *JQSRT* 186, 243-253,
+doi:[10.1016/j.jqsrt.2016.06.018](https://doi.org/10.1016/j.jqsrt.2016.06.018).
 
 ---
 
 ## License
 
-The Python implementation in this package is original work by the authors.
+The mieEODG code is released under the [MIT License](LICENSE).
 
-The underlying Mie scattering algorithms are ported from the EODG IDL Mie
-package developed at the Atmospheric, Oceanic and Planetary Physics group,
-University of Oxford:
-[https://eodg.atm.ox.ac.uk/MIE/](https://eodg.atm.ox.ac.uk/MIE/)
-
-### ARIA refractive index data
-
-The ARIA (Aerosol Refractive Index Archive) data bundled with this package
-are provided by the Oxford EODG and redistributed with permission:
-[https://eodg.atm.ox.ac.uk/ARIA/](https://eodg.atm.ox.ac.uk/ARIA/)
-
-> ARIA has been compiled by Don Grainger, Dan Peters, Lieven Clarisse and
-> Hervé Herbin.  The following people are acknowledged for supporting ARIA:
-> Dr R. McPheat (Rutherford Appleton Laboratory).
-
-**Cite the original measurements, not ARIA.**  ARIA is a compilation of data
-published by others: each material's refractive indices come from a specific
-measurement study, and it is that study which must be cited in any
-publication using them.  Every `.ri` file records its own source in the
-`#REFERENCE` and `#DOI` header fields, and the parsed object exposes it:
-
-```python
-ri = db.read(ARIA_DEFAULTS['volcanic_ash'], wavenumber=wn)
-print(ri.reference)
-# A. Deguine, D. Petitprez, L. Clarisse, S. Gudmundsson, V. Outes,
-# G. Villarosa, and H. Herbin, "Complex refractive index of volcanic ash
-# aerosol in the infrared, visible, and ultraviolet," Appl. Opt. 59,
-# 884-895 (2020).
-```
-
-Cite that reference for **each material used**.  Acknowledging the ARIA
-archive and the compilers named above is appropriate in addition, but does
-not substitute for the primary citation.
-
-A formal open-source license for this package is yet to be determined.
-Until one is assigned, all rights are reserved by the authors.
+The licence covers the code of this package. The bundled ARIA data files
+(`mieEODG/data/ARIA/`) remain the work of their original authors and of the
+ARIA compilers; they are included for convenience, and their use is subject to
+the citation requests above. `mieEODG/data/Prata2019_coeff.csv` reproduces the
+regression coefficients of Prata et al. (2019).

@@ -15,7 +15,8 @@ mieEODG/fortran/*.so
 mieEODG/fortran/*.pyd
 mieEODG/fortran/*.mod
 mieEODG/fortran/*.o
-mieEODG/fortran/.f2py_build/  # NumPy f2py build directory
+# NumPy f2py build directory
+mieEODG/fortran/.f2py_build/
 _mie_kernel_f90*.so
 _mie_kernel_f90*.pyd
 
@@ -29,9 +30,12 @@ venv/
 *.ipynb
 
 # Test / debug outputs
-tests/demo_output/      # consolidated demo figure outputs
-tests/*.png             # legacy (pre-demo_config)
-tests/*.nc              # legacy (pre-demo_config)
+# consolidated demo figure outputs
+tests/demo_output/
+# legacy (pre-demo_config)
+tests/*.png
+# legacy (pre-demo_config)
+tests/*.nc
 tests/*.npz
 debug/
 

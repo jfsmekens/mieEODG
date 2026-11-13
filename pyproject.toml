@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools>=61", "numpy", "wheel", "meson", "meson-python"]
+# ninja is needed by f2py's meson backend; without it the Fortran kernel
+# fails to build and the install silently falls back to the Python backend.
+requires = ["setuptools>=77", "numpy", "wheel", "meson", "meson-python", "ninja"]
 build-backend = "build"
 backend-path = ["."]
 
@@ -10,15 +12,15 @@ version = "0.3.0"
 description = "Python package for Mie scattering calculations on spherical aerosol particles, ported from the EODG IDL library"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "TBD"}
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
-    {name = "EODG (Earth Observation Data Group)", email = "js4247@nau.edu"}
+    {name = "Jean-François Smekens", email = "js4247@nau.edu"}
 ]
 keywords = ["Mie", "scattering", "aerosol", "optics", "radiative transfer"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -43,7 +45,7 @@ progress = [
 # Plotting and demo scripts
 plot = [
     "matplotlib>=3.5",
-    "cmocean>=3.0",
+    "cmcrameri>=1.4",
 ]
 # Full install — everything
 full = [
@@ -51,7 +53,7 @@ full = [
     "netCDF4>=1.5",
     "tqdm>=4.60",
     "matplotlib>=3.5",
-    "cmocean>=3.0",
+    "cmcrameri>=1.4",
 ]
 # Development and testing
 dev = [
@@ -60,9 +62,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/EODG/mieEODG"
-Documentation = "https://eodg.atm.ox.ac.uk/MIE/"
-Repository = "https://github.com/EODG/mieEODG.git"
+Homepage = "https://github.com/jfsmekens/mieEODG"
+"EODG Mie code" = "https://eodg.atm.ox.ac.uk/MIE/"
+Repository = "https://github.com/jfsmekens/mieEODG.git"
 
 [project.scripts]
 mie-viewer = "mieEODG.mie_viewer:launch"
